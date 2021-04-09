@@ -12,6 +12,8 @@ import com.zhu.config.SqlHelperException;
 import com.zhu.handler.InjectColumnInfoHandler;
 import com.zhu.handler.LogicDeleteInfoHandler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -47,6 +49,22 @@ public class SqlInjectColumnHelper {
         }
     }
 
+    private void addSelectItem2Query(SQLSelectQueryBlock queryBody){
+        List<SQLSelectItem> sqlSelectItems = queryBody.getSelectList();
+        List<SQLSelectItem> addItems = new ArrayList<>();
+        for(SQLSelectItem sqlSelectItem:sqlSelectItems){
+            if(sqlSelectItem.getExpr() instanceof SQLPropertyExpr){
+                SQLPropertyExpr expr = (SQLPropertyExpr) sqlSelectItem.getExpr();
+                if(!"*".equals(expr.getName())){
+                    SQLSelectItem item= sqlSelectItem.clone();
+                    SQLPropertyExpr addExpr = (SQLPropertyExpr) item.getExpr();
+                    addExpr.setName("tenant_id");
+                    addItems.add(item);
+                }
+            }
+        }
+        sqlSelectItems.addAll(addItems);
+    }
     /**
      * 为sql语句中的注入字段
      *
@@ -55,10 +73,12 @@ public class SqlInjectColumnHelper {
      */
     public String injectSql(String sql){
         List<SQLStatement> statementList = SQLUtils.parseStatements(sql, this.dbType);
+        System.out.println(SQLUtils.toSQLString(statementList, this.dbType));
         int i = 0;
         for(SQLStatement sqlStatement:statementList){
             if (sqlStatement instanceof SQLSelectStatement) {
                 SQLSelectQueryBlock queryObject = (SQLSelectQueryBlock) ((SQLSelectStatement) sqlStatement).getSelect().getQuery();
+                addSelectItem2Query(queryObject);
                 addCondition2Query(queryObject, queryObject.getFrom());
             } else if (sqlStatement instanceof SQLUpdateStatement) {
                 // 为更新语句中的查询语句添加附加条件
@@ -279,5 +299,36 @@ public class SqlInjectColumnHelper {
             return contains || contains(right,fieldName);
         }
         return false;
+    }
+
+    public static void main(String[] args) {
+//        String sql = "select * from user s";
+//        String sql = "select * from user s where s.name='333'";
+//        String sql = "select * from (select * from tab t where id = 2 and name = 'wenshao') s where s.name='333'";
+        String sql="select u.*,g.name from user u join user_group g on u.groupId=g.groupId where u.name='123'";
+
+//        String sql = "update user set name=? where id =(select id from user s)";
+//        String sql = "delete from user where id = ( select id from user s )";
+//        String sql = "insert into user (id,name) values('0','heykb')";
+//        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
+        InjectColumnInfoHandler injectColumnInfoHandler = new InjectColumnInfoHandler() {
+            @Override
+            public String getColumnName() {
+                return "tenant_id";
+            }
+
+            @Override
+            public Object getValue() {
+                return "sqlhelper";
+            }
+
+            @Override
+            public int getInjectTypes() {
+                return CONDITION;
+            }
+        };
+        SqlInjectColumnHelper helper = new SqlInjectColumnHelper(DbType.postgresql, Arrays.asList(injectColumnInfoHandler));
+        String re = helper.injectSql(sql);
+        System.out.println(re);
     }
 }

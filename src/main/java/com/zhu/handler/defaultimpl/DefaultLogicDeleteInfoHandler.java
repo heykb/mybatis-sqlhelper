@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * 通过环境变量配置逻辑删除的实现类
  * @author heykb
  */
 @ConfigurationProperties(prefix = "sqlhelper.logic-delete")
