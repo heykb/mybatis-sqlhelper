@@ -192,7 +192,7 @@ sqlhelper:
     WHERE id = 1
    ~~~
 
-## 未完待续。。
+## 未完待续。。(留下你的小星星鼓励我完善它)
 ## 联系我
 QQ: 1259609102<br>
 email: bigsheller08@gmail.com,1259609102@qq.com
