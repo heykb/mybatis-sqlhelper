@@ -25,7 +25,7 @@ sqlhelper:
   multi-tenant:
     enable: true
 ~~~
-只需要继承继承[TenantInfoHanlder](./src/main/java/com/zhu/handler/TenantInfoHanlder.java)类的实现类，重写以下必要方法。
+只需要继承[TenantInfoHanlder](./src/main/java/com/zhu/handler/TenantInfoHanlder.java)类，重写以下必要方法。
 ~~~java
 @Component
 public class SimpleTenantInfoHanlder extends TenantInfoHanlder {
@@ -75,7 +75,7 @@ sqlhelper:
     ignore-tables:
       - people
     ignore-mapper-ids:
-     - com.**.xx
+      - com.**.xx
 ~~~
 1. 代码配置方式
    继承[LogicDeleteInfoHandler](./src/main/java/com/zhu/handler/LogicDeleteInfoHandler.java)类，重写主要方法即可
