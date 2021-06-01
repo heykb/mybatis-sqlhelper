@@ -1,17 +1,24 @@
 package com.zhu.config;
 
 
+import com.zhu.handler.ColumnFilterInfoHandler;
 import com.zhu.handler.InjectColumnInfoHandler;
-import com.zhu.handler.LogicDeleteInfoHandler;
-import com.zhu.handler.TenantInfoHanlder;
+import com.zhu.handler.abstractor.LogicDeleteInfoHandler;
+import com.zhu.handler.abstractor.TenantInfoHanlder;
 import com.zhu.handler.defaultimpl.DefaultLogicDeleteInfoHandler;
+import com.zhu.handler.dynamic.DynamicFindColumnFilterHandler;
+import com.zhu.handler.dynamic.DynamicFindInjectInfoHandler;
+import com.zhu.interceptor.ColumnFilterPlugin;
 import com.zhu.interceptor.InjectColumnPlugin;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
@@ -22,10 +29,19 @@ import java.util.List;
  * @author heykb
  */
 @Configuration
-@ConditionalOnProperty("sqlhelper.enable")
+@ConditionalOnProperty(value = "sqlhelper.enable",havingValue = "true",matchIfMissing = true)
 public class SqlHelperConfiguration implements ApplicationContextAware {
 
+    @Value("${sqlhelper.columnFilterType:sql}")
+    private String columnFilterType;
+
+    @Autowired(required = false)
+    private DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler;
+    @Autowired(required = false)
+    private DynamicFindInjectInfoHandler dynamicFindInjectInfoHandler;
+
     private Collection<InjectColumnInfoHandler> injectColumnInfoHandlers;
+    private Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers;
     @Bean
     @ConditionalOnMissingBean(LogicDeleteInfoHandler.class)
     public DefaultLogicDeleteInfoHandler defaultLogicDeleteInfoHandler(){
@@ -33,9 +49,10 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
     }
     @Bean
     public SqlHelperConfig sqlHelperConfig(){
-        return new SqlHelperConfig();
+        return  new SqlHelperConfig();
     }
     @Bean
+    @Conditional(InjectColumnPluginCondition.class)
     public InjectColumnPlugin injectColumnPlugin(){
         List<InjectColumnInfoHandler> handlers = new ArrayList<>();
         SqlHelperConfig sqlHelperConfig = sqlHelperConfig();
@@ -49,11 +66,30 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
                 handlers.add(injectColumnInfoHandler);
             }
         }
-        return new InjectColumnPlugin(sqlHelperConfig.getDbtype(),handlers);
+        InjectColumnPlugin re = new InjectColumnPlugin(sqlHelperConfig.getDbtype(),handlers);
+        re.setTbAliasPrefix(sqlHelperConfig.getTbAliasPrefix());
+        re.setDynamicFindInjectInfoHandler(dynamicFindInjectInfoHandler);
+        if(!columnFilterType.equals("result")){
+            re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);
+            re.setDynamicFindColumnFilterHandler(dynamicFindColumnFilterHandler);
+        }
+        return re;
+    }
+
+    @Bean
+    @Conditional(ColumnFilterPluginCondition.class)
+    @ConditionalOnProperty(value = "sqlhelper.columnFilterType",havingValue = "result")
+    public ColumnFilterPlugin columnFilterPlugin(){
+        ColumnFilterPlugin re =  new ColumnFilterPlugin(this.columnFilterInfoHandlers);
+        re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);
+        re.setDynamicFindColumnFilterHandler(dynamicFindColumnFilterHandler);
+        return re;
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         injectColumnInfoHandlers = applicationContext.getBeansOfType(InjectColumnInfoHandler.class).values();
+        columnFilterInfoHandlers = applicationContext.getBeansOfType(ColumnFilterInfoHandler.class).values();
     }
+
 }

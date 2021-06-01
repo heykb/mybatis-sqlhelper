@@ -8,14 +8,24 @@ import org.springframework.beans.factory.annotation.Value;
  * @author heykb
  */
 public class SqlHelperConfig {
-    @Value("${sqlhelper.dbtype:mysql}")
+    @Value("${sqlhelper.dbtype:postgresql}")
     private DbType dbtype;
     @Value("${sqlhelper.enable:true}")
     private boolean enable;
-    @Value("${sqlhelper.logic-delete.enable:true}")
+    @Value("${sqlhelper.logicDelete.enable:false}")
     private boolean logicDeleteEnable;
-    @Value("${sqlhelper.multi-tenant.enable:true}")
+    @Value("${sqlhelper.multiTenant.enable:true}")
     private boolean multiTenantEnable;
+    @Value("${sqlhelper.selectItem.tbAliasPrefix:inj}")
+    private String tbAliasPrefix;
+
+    public String getTbAliasPrefix() {
+        return tbAliasPrefix;
+    }
+
+    public void setTbAliasPrefix(String tbAliasPrefix) {
+        this.tbAliasPrefix = tbAliasPrefix;
+    }
 
     public DbType getDbtype() {
         return dbtype;

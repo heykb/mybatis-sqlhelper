@@ -1,13 +1,15 @@
 package com.zhu.handler;
 
+import com.alibaba.druid.DbType;
+import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.expr.SQLBooleanExpr;
-import com.alibaba.druid.sql.ast.expr.SQLCharExpr;
-import com.alibaba.druid.sql.ast.expr.SQLIntegerExpr;
-import com.alibaba.druid.sql.ast.expr.SQLMethodInvokeExpr;
+import com.alibaba.druid.sql.ast.expr.*;
+import com.zhu.config.SqlHelperException;
+import org.apache.ibatis.mapping.SqlCommandType;
 
 /**
  * 代表一条自动注入配置，如配置字段名称、字段值、注入类型等
+ *
  * @author heykb
  */
 public interface InjectColumnInfoHandler {
@@ -26,64 +28,99 @@ public interface InjectColumnInfoHandler {
     int UPDATE = 1<<2;
 
     /**
+     * 注入到查询内容中
+     */
+    int SELECT_ITEM=1<<3;
+
+
+    /**
      * 设置注入字段名称
-     * @return
+     *
+     * @return column name
      */
     String getColumnName();
 
     /**
      * 设置注入字段的值
-     * @return
+     *
+     * @return value
      */
-    Object getValue();
+    String getValue();
+
 
     /**
      * 设置注入类型 CONDITION|INSERT|UPDATE
-     * @return
+     *
+     * @return inject types
      */
     int getInjectTypes();
 
     /**
+     * Op string.
+     *
+     * @return the string
+     */
+    default String op(){
+        return "=";
+    }
+
+    /**
      * 当注入目标中已存在该字段时，true跳过，false替换
-     * @return
+     *
+     * @return boolean
      */
     default boolean isExistSkip(){
         return false;
     }
 
+
     /**
      * 设置表级别过滤逻辑
-     * @param tableName
-     * @return
+     *
+     * @param tableName the table name
+     * @return boolean
      */
-    default boolean ignoreTable(String tableName){
-        return false;
+    default boolean checkTableName(String tableName){
+        return true;
     }
+
     /**
      * 设置mapperId方法级别过滤逻辑
-     * @param mapperId
-     * @return
+     *
+     * @param mapperId the mapper id
+     * @return boolean
      */
-    default boolean ignoreMapperId(String mapperId){
-        return false;
+    default boolean checkMapperId(String mapperId){
+        return true;
     }
+
+
     /**
-     * 注入value是否是sql方法
+     * 设置sql命令类型过滤逻辑
+     * @param commandType
      * @return
      */
-    default boolean isMethod(){
-        return false;
+    default boolean checkCommandType(SqlCommandType commandType){
+        return true;
     }
-    default SQLExpr toSQLExpr(){
-        if(getValue() instanceof String){
-            return isMethod()? new SQLMethodInvokeExpr((String) getValue()):new SQLCharExpr((String) getValue());
-        }
-        if(getValue() instanceof Number){
-            return new SQLIntegerExpr((Number) getValue());
-        }
-        if(getValue() instanceof Boolean){
-            return new SQLBooleanExpr((Boolean) getValue());
-        }
-        return new SQLCharExpr(( getValue().toString()));
+
+    /**
+     * 当注入类型为condition时，对是否是最外层语句的条件设置过滤规则
+     * @param isInOuterMost 如果条件语句出现在最外层的sql语句为true(插入语句最外层没有条件所以它的最外层为向内查找的第一个)
+     * @return
+     */
+    default boolean checkIsInOuterMost(boolean isInOuterMost){
+        return true;
+    }
+
+    /**
+     * To sql expr sql expr.
+     *
+     * @param dbType the db type
+     * @return the sql expr
+     */
+    default SQLExpr toSQLExpr(DbType dbType){
+        SQLExpr sqlExpr = SQLUtils.toSQLExpr((String) getValue(),dbType);
+        return sqlExpr;
     }
 }

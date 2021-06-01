@@ -1,24 +1,29 @@
-package com.zhu.handler;
+package com.zhu.handler.abstractor;
 
+
+import com.zhu.handler.InjectColumnInfoHandler;
 
 /**
  * 实现InjectColumnInfoHandler自动注入配置接口，代表多租户自动注入配置
  * 配置多租户的字段名称、租户value获取方式
  * 使用时继承该类，并注入为一个bean
+ *
  * @author heykb
  */
-public abstract class TenantInfoHanlder implements InjectColumnInfoHandler{
+public abstract class TenantInfoHanlder implements InjectColumnInfoHandler {
     /**
      * 设置代表租户字段名称
-     * @return
+     *
+     * @return tenant id column
      */
     public abstract String getTenantIdColumn();
+
     /**
      * 当前租户value获取方式
-     * @return
+     *
+     * @return tenant id
      */
-    public abstract Object getTenantId();
-
+    public abstract String getTenantId();
 
     @Override
     public String getColumnName() {
@@ -26,7 +31,7 @@ public abstract class TenantInfoHanlder implements InjectColumnInfoHandler{
     }
 
     @Override
-    public Object getValue() {
+    public String getValue() {
         return getTenantId();
     }
 

@@ -1,6 +1,6 @@
 package com.zhu.handler.defaultimpl;
 
-import com.zhu.handler.LogicDeleteInfoHandler;
+import com.zhu.handler.abstractor.LogicDeleteInfoHandler;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.AntPathMatcher;
 
@@ -9,6 +9,7 @@ import java.util.Set;
 
 /**
  * 通过环境变量配置逻辑删除的实现类
+ *
  * @author heykb
  */
 @ConfigurationProperties(prefix = "sqlhelper.logic-delete")
@@ -20,26 +21,46 @@ public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     }
     private String sqlDemo;
     private String columnName;
-    private Object notDeletedValue;
+    private String notDeletedValue;
 
-    private Set<String> ignoreTables;
+    private Set<String> checkTableNames;
 
-    private List<String> ignoreMapperIds;
+    private List<String> checkMapperIds;
 
-    public Set<String> getIgnoreTables() {
-        return ignoreTables;
+    /**
+     * Gets ignore tables.
+     *
+     * @return the ignore tables
+     */
+    public Set<String> getcheckTableNames() {
+        return checkTableNames;
     }
 
-    public void setIgnoreTables(Set<String> ignoreTables) {
-        this.ignoreTables = ignoreTables;
+    /**
+     * Sets ignore tables.
+     *
+     * @param checkTableNames the ignore tables
+     */
+    public void setcheckTableNames(Set<String> checkTableNames) {
+        this.checkTableNames = checkTableNames;
     }
 
-    public List<String> getIgnoreMapperIds() {
-        return ignoreMapperIds;
+    /**
+     * Gets ignore mapper ids.
+     *
+     * @return the ignore mapper ids
+     */
+    public List<String> getcheckMapperIds() {
+        return checkMapperIds;
     }
 
-    public void setIgnoreMapperIds(List<String> ignoreMapperIds) {
-        this.ignoreMapperIds = ignoreMapperIds;
+    /**
+     * Sets ignore mapper ids.
+     *
+     * @param checkMapperIds the ignore mapper ids
+     */
+    public void setcheckMapperIds(List<String> checkMapperIds) {
+        this.checkMapperIds = checkMapperIds;
     }
 
     @Override
@@ -48,11 +69,16 @@ public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     }
 
     @Override
-    public Object getNotDeletedValue() {
+    public String getNotDeletedValue() {
         return notDeletedValue;
     }
 
-    public void setNotDeletedValue(Object notDeletedValue) {
+    /**
+     * Sets not deleted value.
+     *
+     * @param notDeletedValue the not deleted value
+     */
+    public void setNotDeletedValue(String notDeletedValue) {
         this.notDeletedValue = notDeletedValue;
     }
 
@@ -61,29 +87,39 @@ public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
         return this.columnName;
     }
 
+    /**
+     * Sets sql demo.
+     *
+     * @param sqlDemo the sql demo
+     */
     public void setSqlDemo(String sqlDemo) {
         this.sqlDemo = sqlDemo;
     }
 
+    /**
+     * Sets column name.
+     *
+     * @param columnName the column name
+     */
     public void setColumnName(String columnName) {
         this.columnName = columnName;
     }
 
     @Override
-    public boolean ignoreTable(String tableName) {
-        if(ignoreTables==null || ignoreTables.isEmpty()){
+    public boolean checkTableName(String tableName) {
+        if(checkTableNames==null || checkTableNames.isEmpty()){
             return false;
         }
-        return ignoreTables.contains(tableName);
+        return checkTableNames.contains(tableName);
     }
 
     @Override
-    public boolean ignoreMapperId(String mapperId) {
-        if(ignoreMapperIds==null || ignoreMapperIds.isEmpty()){
+    public boolean checkMapperId(String mapperId) {
+        if(checkMapperIds==null || checkMapperIds.isEmpty()){
             return false;
         }
-        for(String pattern:ignoreMapperIds){
-            if(antPathMatcher.match(pattern,mapperId)) return true;
+        for(String pattern:checkMapperIds){
+            if(antPathMatcher.match(pattern,mapperId)) {return true;}
         }
         return false;
     }
