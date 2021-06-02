@@ -128,13 +128,3 @@ FROM(
 ### 程序运行启动动态分配注入
 以上方式都是程序启动就分配好的（权限）注入，不适用数据权限管理为不同用户分配不同的权限。<br>
 MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindInjectInfoHandler.java)和[DynamicFindColumnFilterHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindColumnFilterHandler.java),您可以实现他们并编写```根据用户权限构造handler列表返回```逻辑。
-
-### 注入结果示例
-### 输入：
-~~~sql
-select * from user s
-~~~
-### 输出：
-~~~sql
-SELECT * FROM user s WHERE s.tenant_id = 'sqlhelper'
-~~~
