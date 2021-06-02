@@ -19,6 +19,8 @@ public interface ConditionInjectInfo extends InjectColumnInfoHandler{
     default int getInjectTypes() {
         return CONDITION;
     }
+
+
     @Override
     default String getColumnName(){
         return null;
@@ -27,6 +29,8 @@ public interface ConditionInjectInfo extends InjectColumnInfoHandler{
     default String getValue(){
         return null;
     }
+
+
 
     /**
      * To condition sql expr sql expr.

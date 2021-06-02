@@ -193,7 +193,6 @@ public class SqlInjectColumnHelper {
         return re;
     }
 
-
     public SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns){
         final SQLStatement tmp = SQLUtils.parseSingleStatement("select * from a",dbType);
         if(CollectionUtils.isEmpty(filterColumns)){

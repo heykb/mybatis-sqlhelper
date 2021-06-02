@@ -17,6 +17,7 @@ import com.zhu.utils.CommonUtils;
  * @author heykb
  */
 public abstract class ConditionInjectInfoHandler implements ConditionInjectInfo {
+
     @Override
     abstract public String getColumnName();
 
