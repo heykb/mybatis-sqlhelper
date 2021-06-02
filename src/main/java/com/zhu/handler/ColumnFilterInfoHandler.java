@@ -19,13 +19,6 @@ public interface ColumnFilterInfoHandler {
 
 
     /**
-     * Filter columns set.
-     *
-     * @return the set
-     */
-    Collection<String> getSelectColumns();
-
-    /**
      * 设置mapperId方法级别过滤逻辑
      *
      * @param mapperId the mapper id

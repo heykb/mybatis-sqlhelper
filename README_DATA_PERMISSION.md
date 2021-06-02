@@ -128,3 +128,7 @@ FROM(
 ### 程序运行启动动态分配注入
 以上方式都是程序启动就分配好的（权限）注入，不适用数据权限管理为不同用户分配不同的权限。<br>
 MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindInjectInfoHandler.java)和[DynamicFindColumnFilterHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindColumnFilterHandler.java),您可以实现他们并编写```根据用户权限构造handler列表返回```逻辑。
+
+### 缺憾
+针对列级别过滤，如果columnFilterType为sql,那么要求原查询sql不得使用```select *```查询列，所有查询列必须明确写出来。<br>
+如果columnFilterType为result则不存在这个问题，因为这种方式不是在数据库级别过滤字段了，而是在java代码层。
