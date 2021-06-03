@@ -14,6 +14,20 @@ MyBatis SqlHelper实现了底层最重要的过滤逻辑，借助MyBatis SqlHelp
 
 ## 使用范例
 ### 行级别控制
+#### 输入：
+~~~sql
+SELECT created_by, dept_id, importand_data, data, tenant_id, id
+FROM test
+LIMIT ? OFFSET ?
+~~~
+#### 输出：
+~~~sql
+SELECT created_by, dept_id, importand_data, data, tenant_id , id 
+FROM test 
+WHERE created_by = 'zrc' 
+LIMIT ? OFFSET ? 
+~~~
+### 使用方式
 1. 单条件注入：继承[ConditionInjectInfoHandler](./src/main/java/com/zhu/handler/abstractor/ConditionInjectInfoHandler.java)类，重写以下必要方法
 ~~~java
 @Component
@@ -68,21 +82,25 @@ public class SimpleConditionInjectInfoHandler extends ConditionInjectInfoHandler
 }
 ~~~
 2. 多条件注入：继承[BinaryConditionInjectInfoHandler](./src/main/java/com/zhu/handler/abstractor/BinaryConditionInjectInfoHandler.java)类...
-### 输入：
+
+   
+### 列级别控制
+#### 输入：
 ~~~sql
 SELECT created_by, dept_id, importand_data, data, tenant_id, id
 FROM test
 LIMIT ? OFFSET ?
 ~~~
-### 输出：
+#### 输出：
 ~~~sql
-SELECT created_by, dept_id, importand_data, data, tenant_id , id 
-FROM test 
-WHERE created_by = 'zrc' 
-LIMIT ? OFFSET ? 
+SELECT created_by, dept_id, data, tenant_id, id  
+FROM( 
+    SELECT created_by, dept_id, importand_data, data, tenant_id, id
+    FROM test
+    LIMIT ? OFFSET ? 
+) _sql_help_ 
 ~~~
-   
-### 列级别控制
+### 使用方式
 实现[ColumnFilterInfoHandler](./src/main/java/com/zhu/handler/ColumnFilterInfoHandler.java)类
  ~~~java
 @Component
@@ -111,21 +129,7 @@ sqlhelper:
   # smarter: 优先使用注入sql过滤列，注入sql不适用时使用result的方式
   columnFilterType: sql
 ~~~
-### 输入：
-~~~sql
-SELECT created_by, dept_id, importand_data, data, tenant_id, id
-FROM test
-LIMIT ? OFFSET ?
-~~~
-### 输出：
-~~~sql
-SELECT created_by, dept_id, data, tenant_id, id  
-FROM( 
-    SELECT created_by, dept_id, importand_data, data, tenant_id, id
-    FROM test
-    LIMIT ? OFFSET ? 
-) _sql_help_ 
-~~~
+
 
 ### 程序运行启动动态分配注入
 以上方式都是程序启动就分配好的（权限）注入，不适用数据权限管理为不同用户分配不同的权限。<br>
