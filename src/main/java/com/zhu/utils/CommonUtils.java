@@ -28,6 +28,7 @@ public class CommonUtils {
         }
 
     }
+
     public static String adaptePropertieName(String originName, Configuration configuration){
         String re = originName;
         if(originName!=null && configuration!=null){

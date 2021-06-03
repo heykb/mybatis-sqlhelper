@@ -9,9 +9,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 /**
  * @author heykb
  */
-public class ColumnFilterPluginCondition extends AnyNestedCondition {
+public class ColumnFilterPluginBeanCondition extends AnyNestedCondition {
 
-    ColumnFilterPluginCondition() {
+    ColumnFilterPluginBeanCondition() {
         super(ConfigurationPhase.REGISTER_BEAN);
     }
     @ConditionalOnBean(ColumnFilterInfoHandler.class)

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * @author heykb
  */
 public class SqlInjectColumnHelper {
-
+    public static final String SUB_QUERY_ALIAS = "_sql_help_";
     private String tbAliasPrefix;
 
     private DbType dbType;
@@ -201,7 +201,8 @@ public class SqlInjectColumnHelper {
         filterColumns = filterColumns.stream().map(filterColumn->CommonUtils.adaptePropertieName(filterColumn,this.configuration)).collect(Collectors.toList());
         SQLSelectQueryBlock queryObject = (SQLSelectQueryBlock) ((SQLSelectStatement) originSql).getSelect().getQuery();
         List<SQLSelectItem> originItems = queryObject.getSelectList();
-        List<SQLSelectItem> items = new ArrayList<>();
+        Set<String> selectItemNames = new HashSet<>();
+
         for(SQLSelectItem originItem:originItems){
             String name = originItem.toString();
             if(originItem.getAlias() != null){
@@ -209,17 +210,21 @@ public class SqlInjectColumnHelper {
             }else if(originItem.getExpr() instanceof SQLPropertyExpr){
                 name = ((SQLPropertyExpr) originItem.getExpr()).getName();
             }
-            if(!filterColumns.contains(SQLUtils.normalize(name))){
-                items.add(new SQLSelectItem(new SQLIdentifierExpr(name)));
-            }
+            selectItemNames.add(SQLUtils.normalize(name));
         }
-        if(items.size()<originItems.size()){
+        if(selectItemNames.contains("*")){
+            return originSql;
+        }
+        for(String filterColumn:filterColumns){
+            selectItemNames.remove(filterColumn);
+        }
+        if(selectItemNames.size()<originItems.size()){
             if (tmp instanceof SQLSelectStatement) {
                 SQLSelectQueryBlock sqlSelectQueryBlock = (SQLSelectQueryBlock) ((SQLSelectStatement) tmp).getSelect().getQuery();
-                sqlSelectQueryBlock.setFrom(((SQLSelectStatement) originSql).getSelect(),"_sql_help_");
+                sqlSelectQueryBlock.setFrom(((SQLSelectStatement) originSql).getSelect(),SUB_QUERY_ALIAS);
                 List<SQLSelectItem> sqlSelectItems = sqlSelectQueryBlock.getSelectList();
                 sqlSelectItems.clear();
-                sqlSelectItems.addAll(items);
+                sqlSelectItems.addAll(selectItemNames.stream().map(selectItemName->new SQLSelectItem(new SQLIdentifierExpr(selectItemName))).collect(Collectors.toList()));
                 return tmp;
             }
         }

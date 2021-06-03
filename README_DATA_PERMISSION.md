@@ -132,3 +132,5 @@ MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](./src/main/java/com/zhu
 ### 缺憾
 针对列级别过滤，如果columnFilterType为sql,那么要求原查询sql不得使用```select *```查询列，所有查询列必须明确写出来。<br>
 如果columnFilterType为result则不存在这个问题，因为这种方式不是在数据库级别过滤字段了，而是在java代码层。
+
+

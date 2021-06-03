@@ -1,6 +1,7 @@
 package com.zhu.config;
 
 
+import com.zhu.enums.ColumnFilterType;
 import com.zhu.handler.ColumnFilterInfoHandler;
 import com.zhu.handler.InjectColumnInfoHandler;
 import com.zhu.handler.abstractor.LogicDeleteInfoHandler;
@@ -13,6 +14,7 @@ import com.zhu.interceptor.InjectColumnPlugin;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
@@ -32,8 +34,8 @@ import java.util.List;
 @ConditionalOnProperty(value = "sqlhelper.enable",havingValue = "true",matchIfMissing = true)
 public class SqlHelperConfiguration implements ApplicationContextAware {
 
-    @Value("${sqlhelper.columnFilterType:sql}")
-    private String columnFilterType;
+    @Value("${sqlhelper.columnFilterType:smarter}")
+    private ColumnFilterType columnFilterType;
 
     @Autowired(required = false)
     private DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler;
@@ -52,7 +54,7 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
         return  new SqlHelperConfig();
     }
     @Bean
-    @Conditional(InjectColumnPluginCondition.class)
+    @Conditional(InjectColumnPluginBeanCondition.class)
     public InjectColumnPlugin injectColumnPlugin(){
         List<InjectColumnInfoHandler> handlers = new ArrayList<>();
         SqlHelperConfig sqlHelperConfig = sqlHelperConfig();
@@ -69,7 +71,7 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
         InjectColumnPlugin re = new InjectColumnPlugin(sqlHelperConfig.getDbtype(),handlers);
         re.setTbAliasPrefix(sqlHelperConfig.getTbAliasPrefix());
         re.setDynamicFindInjectInfoHandler(dynamicFindInjectInfoHandler);
-        if(!columnFilterType.equals("result")){
+        if(ColumnFilterType.sql != columnFilterType){
             re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);
             re.setDynamicFindColumnFilterHandler(dynamicFindColumnFilterHandler);
         }
@@ -77,8 +79,7 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
     }
 
     @Bean
-    @Conditional(ColumnFilterPluginCondition.class)
-    @ConditionalOnProperty(value = "sqlhelper.columnFilterType",havingValue = "result")
+    @Conditional({ColumnFilterPluginBeanCondition.class,ColumnFilterPluginPropertyCondition.class})
     public ColumnFilterPlugin columnFilterPlugin(){
         ColumnFilterPlugin re =  new ColumnFilterPlugin(this.columnFilterInfoHandlers);
         re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);

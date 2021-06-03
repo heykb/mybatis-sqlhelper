@@ -3,6 +3,7 @@ package com.zhu.interceptor;
 import com.zhu.handler.ColumnFilterInfoHandler;
 import com.zhu.handler.InjectColumnInfoHandler;
 import com.zhu.handler.dynamic.DynamicFindColumnFilterHandler;
+import com.zhu.helper.SqlInjectColumnHelper;
 import com.zhu.utils.CommonUtils;
 import org.apache.ibatis.executor.resultset.DefaultResultSetHandler;
 import org.apache.ibatis.executor.resultset.ResultSetHandler;
@@ -41,13 +42,15 @@ public class ColumnFilterPlugin implements Interceptor {
     public ColumnFilterPlugin() {
     }
 
+
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        Object re = invocation.proceed();
-        Object[] args = invocation.getArgs();
-        Statement statement = (Statement) args[0];
-        ResultSet rs = statement.getResultSet();
+
         Object target = invocation.getTarget();
+        Object re = invocation.proceed();
+        if(skipAble(re)){
+            return re;
+        }
         while (target.getClass().getName().startsWith("com.sun.proxy.")){
             target = Proxy.getInvocationHandler(target);
         }
@@ -59,6 +62,10 @@ public class ColumnFilterPlugin implements Interceptor {
             MetaObject metaStatementHandler = SystemMetaObject.forObject(defaultResultSetHandler);
             MappedStatement mappedStatement = (MappedStatement) metaStatementHandler.getValue("mappedStatement");
             if(mappedStatement.getSqlCommandType()== SqlCommandType.SELECT){
+                String sql = (String) metaStatementHandler.getValue("boundSql.sql");
+                if(sql.trim().endsWith(SqlInjectColumnHelper.SUB_QUERY_ALIAS)){
+                    return re;
+                }
                 Set<String> ignoreColumns = columnFilterInfoHandlers.stream().filter(columnFilterInfoHandler->columnFilterInfoHandler.checkMapperId(mappedStatement.getId()))
                         .flatMap(columnFilterInfoHandler->columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet());
                 if(dynamicFindColumnFilterHandler!=null){
@@ -72,6 +79,26 @@ public class ColumnFilterPlugin implements Interceptor {
             }
         }
         return re;
+    }
+
+
+    private boolean skipAble(Object o){
+        if(o == null){
+            return true;
+        }
+        if(CommonUtils.isPrimitiveOrWrap(o.getClass())){
+            return true;
+        }else if(o instanceof String){
+            return true;
+        }else if(o.getClass().isArray()){
+            int length = Array.getLength(o);
+            return length<=0 || skipAble(Array.get(o, 0));
+        }else if(Collection.class.isAssignableFrom(o.getClass())){
+            Collection list = (Collection)o;
+            return list.size()<=0 || skipAble(list.iterator().next());
+        }
+        return false;
+
     }
 
     private void filterColumns(Object o,Set<String> ignoreColumns){

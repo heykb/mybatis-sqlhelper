@@ -8,9 +8,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 /**
  * @author heykb
  */
-public class InjectColumnPluginCondition extends AnyNestedCondition {
+public class InjectColumnPluginBeanCondition extends AnyNestedCondition {
 
-    InjectColumnPluginCondition() {
+    InjectColumnPluginBeanCondition() {
         super(ConfigurationPhase.REGISTER_BEAN);
     }
     @ConditionalOnBean(InjectColumnInfoHandler.class)
