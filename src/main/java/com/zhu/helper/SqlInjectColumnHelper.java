@@ -6,22 +6,27 @@ import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.*;
-import com.alibaba.druid.sql.parser.SQLParserFeature;
 import com.alibaba.druid.util.StringUtils;
 import com.zhu.config.SqlHelperException;
-import com.zhu.handler.*;
-import com.zhu.handler.abstractor.ConditionInjectInfoHandler;
+import com.zhu.handler.ConditionInjectInfo;
+import com.zhu.handler.InjectColumnInfoHandler;
 import com.zhu.handler.abstractor.LogicDeleteInfoHandler;
+import com.zhu.typeHandler.ColumnFilterTypeHandler;
 import com.zhu.utils.CommonUtils;
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.LogFactory;
+import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.mapping.SqlCommandType;
+import org.apache.ibatis.reflection.SystemMetaObject;
+import org.apache.ibatis.type.TypeHandler;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import java.sql.Statement;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.LEFT_OUTER_JOIN;
+import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.RIGHT_OUTER_JOIN;
 
 /**
  * The type Sql utils.
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
  * @author heykb
  */
 public class SqlInjectColumnHelper {
+    private static final Log log = LogFactory.getLog(SqlInjectColumnHelper.class);
     public static final String SUB_QUERY_ALIAS = "_sql_help_";
     private String tbAliasPrefix;
 
@@ -47,10 +53,12 @@ public class SqlInjectColumnHelper {
      */
     public SqlInjectColumnHelper(DbType dbType,Collection<InjectColumnInfoHandler> infoHandlers,String tbAliasPrefix) {
         Assert.notNull(tbAliasPrefix,"tbAliasPrefix arg ant not be null");
-        Assert.notEmpty(infoHandlers,"infoHandlers arg can not be null or empty");
         this.tbAliasPrefix = tbAliasPrefix;
         this.dbType = dbType;
         this.infoHandlers = infoHandlers;
+        if(this.infoHandlers == null){
+            this.infoHandlers = new ArrayList<>();
+        }
         for(InjectColumnInfoHandler injectColumnInfoHandler:infoHandlers){
             if(injectColumnInfoHandler instanceof LogicDeleteInfoHandler){
                 logicDeleteInfoHandler = (LogicDeleteInfoHandler) injectColumnInfoHandler;
@@ -140,7 +148,7 @@ public class SqlInjectColumnHelper {
      * @return the string
      */
     public String handlerSql(String sql){
-        return handlerSql(sql,null);
+        return handlerSql(sql,null,null);
     }
 
     /**
@@ -150,9 +158,9 @@ public class SqlInjectColumnHelper {
      * @param filterColumns
      * @return
      */
-    public String handlerSql(String sql,Collection<String> filterColumns){
+    public String handlerSql(String sql, Collection<String> filterColumns, List<ParameterMapping> parameterMappings){
         SQLStatement sqlStatement = SQLUtils.parseSingleStatement(sql, this.dbType);
-        System.out.println(SQLUtils.toSQLString(sqlStatement, this.dbType));
+        System.out.println(sqlStatement.toString());
         SqlCommandType commandType = null;
         if (sqlStatement instanceof SQLSelectStatement) {
             commandType = SqlCommandType.SELECT;
@@ -167,7 +175,7 @@ public class SqlInjectColumnHelper {
             addCondition2QueryInWhere(where,commandType);
             SQLExpr newCondition = newEqualityCondition(SQLUtils.normalize(updateStatement.getTableName().getSimpleName()),updateStatement.getTableSource().getAlias(), where,SqlCommandType.UPDATE,true);
             updateStatement.setWhere(newCondition);
-            addColumn2Update(updateStatement);
+            handlerColumn2Update(updateStatement,filterColumns,parameterMappings);
         } else if (sqlStatement instanceof SQLDeleteStatement) {
             // 为删除语句中的查询语句添加附加条件
             commandType = SqlCommandType.DELETE;
@@ -194,15 +202,16 @@ public class SqlInjectColumnHelper {
     }
 
     public SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns){
+
         final SQLStatement tmp = SQLUtils.parseSingleStatement("select * from a",dbType);
         if(CollectionUtils.isEmpty(filterColumns)){
             return originSql;
         }
-        filterColumns = filterColumns.stream().map(filterColumn->CommonUtils.adaptePropertieName(filterColumn,this.configuration)).collect(Collectors.toList());
+        List<String> filterFields = filterColumns.stream().map(filterColumn->CommonUtils.adaptePropertieName(filterColumn,this.configuration)).collect(Collectors.toList());
+        log.warn("sql方式过滤查询列："+String.join(",",filterFields));
         SQLSelectQueryBlock queryObject = (SQLSelectQueryBlock) ((SQLSelectStatement) originSql).getSelect().getQuery();
         List<SQLSelectItem> originItems = queryObject.getSelectList();
         Set<String> selectItemNames = new HashSet<>();
-
         for(SQLSelectItem originItem:originItems){
             String name = originItem.toString();
             if(originItem.getAlias() != null){
@@ -212,10 +221,12 @@ public class SqlInjectColumnHelper {
             }
             selectItemNames.add(SQLUtils.normalize(name));
         }
+
         if(selectItemNames.contains("*")){
+            log.warn("sql方式过滤失败");
             return originSql;
         }
-        for(String filterColumn:filterColumns){
+        for(String filterColumn:filterFields){
             selectItemNames.remove(filterColumn);
         }
         if(selectItemNames.size()<originItems.size()){
@@ -225,6 +236,7 @@ public class SqlInjectColumnHelper {
                 List<SQLSelectItem> sqlSelectItems = sqlSelectQueryBlock.getSelectList();
                 sqlSelectItems.clear();
                 sqlSelectItems.addAll(selectItemNames.stream().map(selectItemName->new SQLSelectItem(new SQLIdentifierExpr(selectItemName))).collect(Collectors.toList()));
+                filterColumns.clear();
                 return tmp;
             }
         }
@@ -278,8 +290,20 @@ public class SqlInjectColumnHelper {
             SQLJoinTableSource joinObject = (SQLJoinTableSource) fromBody;
             SQLTableSource left = joinObject.getLeft();
             SQLTableSource right = joinObject.getRight();
-            addCondition2Query(queryBody, left,isInOuterMost,commandType);
-            addCondition2Query(queryBody, right,isInOuterMost,commandType);
+            SQLExpr onCondition = joinObject.getCondition();
+            SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
+            // 处理左外连接添加condition的位置
+            if(left instanceof  SQLExprTableSource && joinType != LEFT_OUTER_JOIN){
+                onCondition = newEqualityCondition(((SQLExprTableSource) left).getTableName(), left.getAlias(), onCondition,commandType,isInOuterMost);
+            }else{
+                addCondition2Query(queryBody, left,isInOuterMost,commandType);
+            }
+            if(right instanceof  SQLExprTableSource && joinType != RIGHT_OUTER_JOIN){
+                onCondition = newEqualityCondition(((SQLExprTableSource) right).getTableName(), right.getAlias(), onCondition,commandType,isInOuterMost);
+            }else{
+                addCondition2Query(queryBody, right,isInOuterMost,commandType);
+            }
+            joinObject.setCondition(onCondition);
         } else if (fromBody instanceof SQLSubqueryTableSource) {
             SQLSelect subSelectObject = ((SQLSubqueryTableSource) fromBody).getSelect();
             SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
@@ -289,8 +313,6 @@ public class SqlInjectColumnHelper {
         }
 
     }
-
-    
 
     SQLStatement toLogicDeleteSql(SQLDeleteStatement sqlStatement){
         if(logicDeleteInfoHandler == null){
@@ -349,7 +371,8 @@ public class SqlInjectColumnHelper {
      * 为更新语句添加字段
      * @param sqlStatement
      */
-    private void addColumn2Update(SQLUpdateStatement sqlStatement){
+    private void handlerColumn2Update(SQLUpdateStatement sqlStatement,Collection<String> filterColumns,List<ParameterMapping> parameterMappings){
+
         List<SQLUpdateSetItem> items = sqlStatement.getItems();
         String tableName = SQLUtils.normalize(sqlStatement.getTableName().getSimpleName());
         for(InjectColumnInfoHandler infoHandler:infoHandlers){
@@ -372,6 +395,38 @@ public class SqlInjectColumnHelper {
                 items.add(sqlUpdateSetItem);
             }
         }
+        if(CollectionUtils.isEmpty(filterColumns)){
+            return ;
+        }
+
+        Set<String> filterFields = filterColumns.stream().map(filterColumn->CommonUtils.adaptePropertieName(filterColumn,this.configuration)).collect(Collectors.toSet());
+        log.warn("过滤更新列："+String.join(",",filterColumns));
+        List<SQLUpdateSetItem> needRemove = new ArrayList<>();
+        List<Integer> removeIndex = new ArrayList<>();
+        for(SQLUpdateSetItem item:items){
+            SQLExpr expr = item.getColumn();
+            String name = item.toString();
+            if(expr instanceof SQLPropertyExpr){
+                name = SQLUtils.normalize(((SQLPropertyExpr) expr).getName());
+            }else if(expr instanceof SQLIdentifierExpr){
+                name = SQLUtils.normalize(((SQLIdentifierExpr) expr).getName());
+            }
+            if(filterFields.contains(name)){
+                needRemove.add(item);
+                if(item.getValue() instanceof SQLVariantRefExpr){
+                    removeIndex.add(((SQLVariantRefExpr) item.getValue()).getIndex()+1);
+                }
+            }
+
+        }
+        if(parameterMappings != null){
+            for(ParameterMapping parameterMapping:parameterMappings){
+
+                TypeHandler typeHandler = parameterMapping.getTypeHandler();
+                SystemMetaObject.forObject(parameterMapping).setValue("typeHandler",new ColumnFilterTypeHandler(typeHandler,removeIndex));
+            }
+        }
+        needRemove.forEach(item->items.remove(item));
     }
     /**
      * 返回添加了附加条件的condition语句
@@ -383,6 +438,7 @@ public class SqlInjectColumnHelper {
      */
     private SQLExpr newEqualityCondition(String tableName, String tableAlias, SQLExpr originCondition,SqlCommandType commandType,boolean isInOuterMost) {
         SQLExpr re = originCondition;
+
         for(InjectColumnInfoHandler infoHandler:infoHandlers){
             if((infoHandler.getInjectTypes()&InjectColumnInfoHandler.CONDITION) > 0){
                 if(!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(commandType) || !infoHandler.checkIsInOuterMost(isInOuterMost)){
@@ -397,10 +453,11 @@ public class SqlInjectColumnHelper {
                 if(infoHandler instanceof ConditionInjectInfo){
                     condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias,dbType,configuration);
                 }else{
-                    String aliasFieldName = StringUtils.isEmpty(tableAlias) ? columnName : tableAlias + "." + columnName;
+                    String aliasFieldName = StringUtils.isEmpty(tableAlias) ? tableName + "."+columnName : tableAlias + "." + columnName;
                     condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
 
                 }
+                log.warn(String.format("表%s添加查询条件：%s",tableName,condition.toString()));
                 re = re==null?condition:SQLUtils.buildCondition(SQLBinaryOperator.BooleanAnd, condition, false, re);
             }
         }
@@ -444,24 +501,25 @@ public class SqlInjectColumnHelper {
 
 
     public static void main(String[] args) {
-        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
+//        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
 //        String sql = "select * from user s where s.name='333'";
 //        String sql = "select inj.xx,yy from (select inj.yy from tab t where id = 2 and name = 'wenshao') s where s.name='333'";
 //        String sql = "select u.*,g.name from user u join user_group g on u.groupId=g.groupId where u.name='123'";
 //        String sql = "select tenant_id from people where id in (select id from user s)";
-//        String sql = "update user set name=? where id =(select id from user s)";
+//        String sql = "update user u set ds=?, u.name=?,id='fdf' ,ddd=? where id =?";
 //        String sql = "delete from user where id = ( select id from user s )";
 //        String sql = "insert into user (id,name) values('0','heykb')";
 //        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
+        String sql = "SELECT * FROM \"a\" LEFT JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
         InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
             @Override
             public String getColumnName() {
-                return "deptid";
+                return "tenant_id";
             }
 
             @Override
             public String getValue() {
-                return "3";
+                return "'zrc'";
             }
 
             @Override
@@ -476,7 +534,7 @@ public class SqlInjectColumnHelper {
 
             @Override
             public boolean checkCommandType(SqlCommandType commandType) {
-                return commandType==SqlCommandType.INSERT;
+                return commandType==SqlCommandType.SELECT;
             }
 
             @Override
@@ -491,7 +549,7 @@ public class SqlInjectColumnHelper {
         };
         SqlInjectColumnHelper helper = new SqlInjectColumnHelper(DbType.postgresql, Arrays.asList(right));
         helper.setConfiguration(new Configuration());
-        String re = helper.handlerSql(sql,Arrays.asList("idS"));
+        String re = helper.handlerSql(sql,null/*Arrays.asList("id")*/,null);
         System.out.println(re);
     }
 }

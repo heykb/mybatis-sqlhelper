@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
  * @author heykb
  */
 public class SqlHelperConfig {
-    @Value("${sqlhelper.dbtype:postgresql}")
+    @Value("${sqlhelper.dbtype:}")
     private DbType dbtype;
     @Value("${sqlhelper.enable:true}")
     private boolean enable;

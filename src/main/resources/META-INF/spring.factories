@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.zhu.config.SqlHelperConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.zhu.NoConflictAutoConfiguration,com.zhu.HasConflictAutoConfiguration

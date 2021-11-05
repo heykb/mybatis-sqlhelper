@@ -1,6 +1,5 @@
 package com.zhu.handler.dynamic;
 
-import com.zhu.handler.ColumnFilterInfoHandler;
 import com.zhu.handler.InjectColumnInfoHandler;
 
 import java.util.List;
@@ -10,4 +9,8 @@ import java.util.List;
  */
 public interface DynamicFindInjectInfoHandler {
     List<InjectColumnInfoHandler> findInjectInfoHandlers();
+
+    default boolean checkMapperIds(String mapperId){
+        return true;
+    }
 }

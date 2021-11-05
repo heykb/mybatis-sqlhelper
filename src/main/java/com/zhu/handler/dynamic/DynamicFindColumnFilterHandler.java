@@ -9,4 +9,7 @@ import java.util.List;
  */
 public interface DynamicFindColumnFilterHandler {
     List<ColumnFilterInfoHandler> findColumnFilterHandlers();
+    default boolean checkMapperIds(String mapperId){
+        return true;
+    }
 }

@@ -1,7 +1,7 @@
-package com.zhu.config;
+package com.zhu;
 
 
-import com.zhu.enums.ColumnFilterType;
+import com.zhu.config.SqlHelperConfig;
 import com.zhu.handler.ColumnFilterInfoHandler;
 import com.zhu.handler.InjectColumnInfoHandler;
 import com.zhu.handler.abstractor.LogicDeleteInfoHandler;
@@ -9,20 +9,19 @@ import com.zhu.handler.abstractor.TenantInfoHanlder;
 import com.zhu.handler.defaultimpl.DefaultLogicDeleteInfoHandler;
 import com.zhu.handler.dynamic.DynamicFindColumnFilterHandler;
 import com.zhu.handler.dynamic.DynamicFindInjectInfoHandler;
-import com.zhu.interceptor.ColumnFilterPlugin;
-import com.zhu.interceptor.InjectColumnPlugin;
+import com.zhu.interceptor.SqlHelperPlugin;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,11 +31,9 @@ import java.util.List;
  */
 @Configuration
 @ConditionalOnProperty(value = "sqlhelper.enable",havingValue = "true",matchIfMissing = true)
-public class SqlHelperConfiguration implements ApplicationContextAware {
-
-    @Value("${sqlhelper.columnFilterType:smarter}")
-    private ColumnFilterType columnFilterType;
-
+public class SqlHelperAutoConfiguration implements ApplicationContextAware {
+    @Autowired
+    private List<SqlSessionFactory> sqlSessionFactoryList;
     @Autowired(required = false)
     private DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler;
     @Autowired(required = false)
@@ -53,9 +50,11 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
     public SqlHelperConfig sqlHelperConfig(){
         return  new SqlHelperConfig();
     }
-    @Bean
-    @Conditional(InjectColumnPluginBeanCondition.class)
-    public InjectColumnPlugin injectColumnPlugin(){
+    @PostConstruct
+    public void addMyInterceptor() {
+        if(CollectionUtils.isEmpty(injectColumnInfoHandlers) && CollectionUtils.isEmpty(columnFilterInfoHandlers) && dynamicFindInjectInfoHandler==null || dynamicFindColumnFilterHandler==null){
+            return;
+        }
         List<InjectColumnInfoHandler> handlers = new ArrayList<>();
         SqlHelperConfig sqlHelperConfig = sqlHelperConfig();
         if(sqlHelperConfig.isEnable()){
@@ -68,23 +67,16 @@ public class SqlHelperConfiguration implements ApplicationContextAware {
                 handlers.add(injectColumnInfoHandler);
             }
         }
-        InjectColumnPlugin re = new InjectColumnPlugin(sqlHelperConfig.getDbtype(),handlers);
+        SqlHelperPlugin re = new SqlHelperPlugin(sqlHelperConfig.getDbtype(),handlers);
         re.setTbAliasPrefix(sqlHelperConfig.getTbAliasPrefix());
         re.setDynamicFindInjectInfoHandler(dynamicFindInjectInfoHandler);
-        if(ColumnFilterType.sql != columnFilterType){
-            re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);
-            re.setDynamicFindColumnFilterHandler(dynamicFindColumnFilterHandler);
-        }
-        return re;
-    }
 
-    @Bean
-    @Conditional({ColumnFilterPluginBeanCondition.class,ColumnFilterPluginPropertyCondition.class})
-    public ColumnFilterPlugin columnFilterPlugin(){
-        ColumnFilterPlugin re =  new ColumnFilterPlugin(this.columnFilterInfoHandlers);
         re.setColumnFilterInfoHandlers(columnFilterInfoHandlers);
         re.setDynamicFindColumnFilterHandler(dynamicFindColumnFilterHandler);
-        return re;
+
+        for (SqlSessionFactory sqlSessionFactory : sqlSessionFactoryList) {
+            sqlSessionFactory.getConfiguration().addInterceptor(re);
+        }
     }
 
     @Override

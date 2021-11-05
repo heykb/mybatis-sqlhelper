@@ -14,11 +14,7 @@ import java.util.Set;
  */
 @ConfigurationProperties(prefix = "sqlhelper.logic-delete")
 public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
-    private static final AntPathMatcher antPathMatcher;
-    static {
-        antPathMatcher = new AntPathMatcher();
-        antPathMatcher.setPathSeparator(".");
-    }
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher(".");
     private String sqlDemo;
     private String columnName;
     private String notDeletedValue;

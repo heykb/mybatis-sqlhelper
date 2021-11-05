@@ -136,20 +136,46 @@ sqlhelper:
    ~~~
    ### 输入：
    ~~~sql
-    SELECT u.*, g.name
-    FROM user u
-        JOIN user_group g ON u.groupId = g.groupId
-    WHERE u.name = '123'
+    SELECT *
+    FROM a
+    RIGHT JOIN "child" ON a.name = child.name
    ~~~
    ### 输出：
    ~~~sql
-    SELECT u.*, g.name
-    FROM user u
-        JOIN user_group g ON u.groupId = g.groupId
-    WHERE u.name = '123'
-        AND u.tenant_id = 'sqlhelper'
-        AND g.tenant_id = 'sqlhelper'
+    SELECT *
+    FROM a
+        RIGHT JOIN child
+        ON a.name = child.name
+            AND a.tenant_id = 'zrc'
+    WHERE child.tenant_id = 'zrc'
    ~~~
+      ### 输入：
+   ~~~sql
+    SELECT *
+    FROM "a"
+        LEFT JOIN (
+            SELECT inj.yy
+            FROM tab t
+            WHERE id = 2
+                AND name = 'wenshao'
+        ) b
+        ON a.name = b.name
+   ~~~
+   ### 输出：
+   ~~~sql
+    SELECT *
+    FROM "a"
+        LEFT JOIN (
+            SELECT inj.yy
+            FROM tab t
+            WHERE id = 2
+                AND name = 'wenshao'
+                AND t.tenant_id = 'zrc'
+        ) b
+        ON a.name = b.name
+    WHERE a.tenant_id = 'zrc'
+   ~~~
+
    
 2. INSERT 新增注入：向插入语句中增加一列信息
    <br>

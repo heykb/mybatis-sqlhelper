@@ -3,8 +3,6 @@ package com.zhu.handler;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.sql.ast.expr.*;
-import com.zhu.config.SqlHelperException;
 import org.apache.ibatis.mapping.SqlCommandType;
 
 /**
@@ -31,7 +29,6 @@ public interface InjectColumnInfoHandler {
      * 注入到查询内容中
      */
     int SELECT_ITEM=1<<3;
-
 
     /**
      * 设置注入字段名称
