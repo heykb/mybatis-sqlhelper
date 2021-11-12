@@ -15,6 +15,7 @@ import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.plugin.*;
+import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
@@ -79,8 +80,9 @@ public class SqlHelperPlugin implements Interceptor {
         }
         Set<String> filterColumns = changeSql(mappedStatement, boundSql);
         SqlSource originSqlSource = mappedStatement.getSqlSource();
+        MetaObject metaObject = SystemMetaObject.forObject(mappedStatement);
         try {
-            SystemMetaObject.forObject(mappedStatement).setValue("sqlSource", new MySqlSource(boundSql));
+            metaObject.setValue("sqlSource", new MySqlSource(boundSql));
             Object re = invocation.proceed();
             if (invocation.getMethod().equals("query") && !CollectionUtils.isEmpty(filterColumns) && !skipAble(re)) {
                 log.warn("降级为结果集过滤列：" + String.join(",", filterColumns));
@@ -88,7 +90,7 @@ public class SqlHelperPlugin implements Interceptor {
             }
             return re;
         } finally {
-            SystemMetaObject.forObject(mappedStatement).setValue("sqlSource", originSqlSource);
+            metaObject.setValue("sqlSource", originSqlSource);
         }
 
     }
