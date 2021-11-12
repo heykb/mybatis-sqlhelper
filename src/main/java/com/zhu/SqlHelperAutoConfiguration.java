@@ -52,7 +52,7 @@ public class SqlHelperAutoConfiguration implements ApplicationContextAware {
     }
     @PostConstruct
     public void addMyInterceptor() {
-        if(CollectionUtils.isEmpty(injectColumnInfoHandlers) && CollectionUtils.isEmpty(columnFilterInfoHandlers) && dynamicFindInjectInfoHandler==null || dynamicFindColumnFilterHandler==null){
+        if(CollectionUtils.isEmpty(injectColumnInfoHandlers) && CollectionUtils.isEmpty(columnFilterInfoHandlers) && dynamicFindInjectInfoHandler==null && dynamicFindColumnFilterHandler==null){
             return;
         }
         List<InjectColumnInfoHandler> handlers = new ArrayList<>();

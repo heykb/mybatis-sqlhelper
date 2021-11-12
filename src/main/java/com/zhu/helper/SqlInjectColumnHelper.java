@@ -160,7 +160,6 @@ public class SqlInjectColumnHelper {
      */
     public String handlerSql(String sql, Collection<String> filterColumns, List<ParameterMapping> parameterMappings){
         SQLStatement sqlStatement = SQLUtils.parseSingleStatement(sql, this.dbType);
-        System.out.println(sqlStatement.toString());
         SqlCommandType commandType = null;
         if (sqlStatement instanceof SQLSelectStatement) {
             commandType = SqlCommandType.SELECT;
@@ -200,6 +199,8 @@ public class SqlInjectColumnHelper {
         String re =  SQLUtils.toSQLString(sqlStatement, this.dbType);
         return re;
     }
+
+
 
     public SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns){
 
@@ -294,12 +295,14 @@ public class SqlInjectColumnHelper {
             SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
             // 处理左外连接添加condition的位置
             if(left instanceof  SQLExprTableSource && joinType != LEFT_OUTER_JOIN){
-                onCondition = newEqualityCondition(((SQLExprTableSource) left).getTableName(), left.getAlias(), onCondition,commandType,isInOuterMost);
+                String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
+                onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition,commandType,isInOuterMost);
             }else{
                 addCondition2Query(queryBody, left,isInOuterMost,commandType);
             }
             if(right instanceof  SQLExprTableSource && joinType != RIGHT_OUTER_JOIN){
-                onCondition = newEqualityCondition(((SQLExprTableSource) right).getTableName(), right.getAlias(), onCondition,commandType,isInOuterMost);
+                String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
+                onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition,commandType,isInOuterMost);
             }else{
                 addCondition2Query(queryBody, right,isInOuterMost,commandType);
             }
@@ -510,7 +513,7 @@ public class SqlInjectColumnHelper {
 //        String sql = "delete from user where id = ( select id from user s )";
 //        String sql = "insert into user (id,name) values('0','heykb')";
 //        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
-        String sql = "SELECT * FROM \"a\" LEFT JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
+        String sql = "SELECT * FROM \"a\" inner JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
         InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
             @Override
             public String getColumnName() {
