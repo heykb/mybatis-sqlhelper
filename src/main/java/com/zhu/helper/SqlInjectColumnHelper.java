@@ -25,8 +25,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.LEFT_OUTER_JOIN;
-import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.RIGHT_OUTER_JOIN;
+import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.*;
 
 /**
  * The type Sql utils.
@@ -294,13 +293,13 @@ public class SqlInjectColumnHelper {
             SQLExpr onCondition = joinObject.getCondition();
             SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
             // 处理左外连接添加condition的位置
-            if(left instanceof  SQLExprTableSource && joinType != LEFT_OUTER_JOIN){
+            if(left instanceof  SQLExprTableSource && joinType != LEFT_OUTER_JOIN && joinType != FULL_OUTER_JOIN){
                 String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
                 onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition,commandType,isInOuterMost);
             }else{
                 addCondition2Query(queryBody, left,isInOuterMost,commandType);
             }
-            if(right instanceof  SQLExprTableSource && joinType != RIGHT_OUTER_JOIN){
+            if(right instanceof  SQLExprTableSource && joinType != RIGHT_OUTER_JOIN && joinType != FULL_OUTER_JOIN){
                 String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
                 onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition,commandType,isInOuterMost);
             }else{
@@ -513,7 +512,7 @@ public class SqlInjectColumnHelper {
 //        String sql = "delete from user where id = ( select id from user s )";
 //        String sql = "insert into user (id,name) values('0','heykb')";
 //        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
-        String sql = "SELECT * FROM \"a\" inner JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
+        String sql = "SELECT * FROM \"a\" left JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
         InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
             @Override
             public String getColumnName() {
