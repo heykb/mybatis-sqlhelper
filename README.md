@@ -19,6 +19,9 @@
 * 将多租户、逻辑删除与应用程序解耦，随配随用
 * 强大的字段自动注入能力（<i>查询条件注入/插入语句注入/更新语句注入/查询列过滤</i>），定制其他业务逻辑
 * 支持多种数据库（基于阿里 druid sql解析器）
+## Github
+https://github.com/heykb/mybatis-sqlhelper
+
 ## 使用方式
 ### 数据权限
 [数据权限专篇](./README_DATA_PERMISSION.md)
