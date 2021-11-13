@@ -4,9 +4,9 @@
 ## 集成
 ~~~java
     <dependency>
-        <groupId>com.zhu</groupId>
+        <groupId>io.github.heykb</groupId>
         <artifactId>mybatis-sqlHelper</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </dependency>
 ~~~
 ## 特点
@@ -34,7 +34,7 @@ sqlhelper:
   multi-tenant:
     enable: true
 ~~~
-只需要继承[TenantInfoHanlder](./src/main/java/com/zhu/handler/TenantInfoHanlder.java)类，重写以下必要方法。
+只需要继承[TenantInfoHanlder](src/main/java/io/github/heykb/sqlhelper/handler/TenantInfoHanlder.java)类，重写以下必要方法。
 ~~~java
 @Component
 public class SimpleTenantInfoHanlder extends TenantInfoHanlder {
@@ -71,7 +71,7 @@ public class SimpleTenantInfoHanlder extends TenantInfoHanlder {
 ~~~
 
 ### 真实删除转逻辑删除
-1. 配置文件的方式配置逻辑删除(内置的配置文件配置实现类[DefaultLogicDeleteInfoHandler](./src/main/java/com/zhu/handler/defaultimpl/DefaultLogicDeleteInfoHandler.java))
+1. 配置文件的方式配置逻辑删除(内置的配置文件配置实现类[DefaultLogicDeleteInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/defaultimpl/DefaultLogicDeleteInfoHandler.java))
 ~~~yml
 sqlhelper:
   enable: true
@@ -87,9 +87,9 @@ sqlhelper:
       - com.**.xx
 ~~~
 1. 代码配置方式
-   继承[LogicDeleteInfoHandler](./src/main/java/com/zhu/handler/LogicDeleteInfoHandler.java)类，重写主要方法即可
+   继承[LogicDeleteInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/LogicDeleteInfoHandler.java)类，重写主要方法即可
 ### 自动注入
-接口：[InjectColumnInfoHandler](./src/main/java/com/zhu/handler/InjectColumnInfoHandler.java)。插件会自动扫描该接口所有bean。
+接口：[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)。插件会自动扫描该接口所有bean。
 1. CONDITION 条件注入：未被过滤的所有查询条件语句（包括子查询）都会被注入指定条<br>
    如：定义这样一条注入信息
    ~~~java

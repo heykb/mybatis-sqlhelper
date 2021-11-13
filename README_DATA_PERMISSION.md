@@ -28,7 +28,7 @@ WHERE created_by = 'zrc'
 LIMIT ? OFFSET ? 
 ~~~
 ### 使用方式
-1. 单条件注入：继承[ConditionInjectInfoHandler](./src/main/java/com/zhu/handler/abstractor/ConditionInjectInfoHandler.java)类，重写以下必要方法
+1. 单条件注入：继承[ConditionInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/ConditionInjectInfoHandler.java)类，重写以下必要方法
 ~~~java
 @Component
 public class SimpleConditionInjectInfoHandler extends ConditionInjectInfoHandler {
@@ -81,7 +81,7 @@ public class SimpleConditionInjectInfoHandler extends ConditionInjectInfoHandler
     }
 }
 ~~~
-2. 多条件注入：继承[BinaryConditionInjectInfoHandler](./src/main/java/com/zhu/handler/abstractor/BinaryConditionInjectInfoHandler.java)类...
+2. 多条件注入：继承[BinaryConditionInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/BinaryConditionInjectInfoHandler.java)类...
 
    
 ### 列级别控制
@@ -101,7 +101,7 @@ FROM(
 ) _sql_help_ 
 ~~~
 ### 使用方式
-实现[ColumnFilterInfoHandler](./src/main/java/com/zhu/handler/ColumnFilterInfoHandler.java)类
+实现[ColumnFilterInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/ColumnFilterInfoHandler.java)类
  ~~~java
 @Component
 public class SimpleColumnFilterInfoHandler extends ColumnFilterInfoHandler {
@@ -133,7 +133,7 @@ sqlhelper:
 
 ### 程序运行启动动态分配注入
 以上方式都是程序启动就分配好的（权限）注入，不适用数据权限管理为不同用户分配不同的权限。<br>
-MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindInjectInfoHandler.java)和[DynamicFindColumnFilterHandler](./src/main/java/com/zhu/handler/dynamic/DynamicFindColumnFilterHandler.java),您可以实现他们并编写```根据用户权限构造handler列表返回```逻辑。
+MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/dynamic/DynamicFindInjectInfoHandler.java)和[DynamicFindColumnFilterHandler](src/main/java/io/github/heykb/sqlhelper/handler/dynamic/DynamicFindColumnFilterHandler.java),您可以实现他们并编写```根据用户权限构造handler列表返回```逻辑。
 
 
 

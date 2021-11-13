@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.zhu.NoConflictAutoConfiguration,com.zhu.HasConflictAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=io.github.heykb.sqlhelper.autoconfigure.NoConflictAutoConfiguration,io.github.heykb.sqlhelper.autoconfigure.HasConflictAutoConfiguration
