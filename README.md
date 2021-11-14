@@ -215,7 +215,7 @@ WHERE id = 1
 ### 1.开启多租户
 ```sqlhelper.multi-tenant.enable=true```
 ### 2.注入bean。
-注入租户信息获取bean,继承[TenantInfoHanlder](src/main/java/io/github/heykb/sqlhelper/handler/TenantInfoHanlder.java)，如：
+注入租户信息获取bean,继承[TenantInfoHanlder](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/TenantInfoHanlder.java)，如：
 ~~~java
 @Component
 public class SimpleTenantInfoHanlder extends TenantInfoHanlder {
@@ -234,7 +234,7 @@ public class SimpleTenantInfoHanlder extends TenantInfoHanlder {
      * @return
      */
     @Override
-    public Object getTenantId() {
+    public String getTenantId() {
         // SecurityContextHolder.getContext().getAuthentication()
         return "sqlhelper";
     }
