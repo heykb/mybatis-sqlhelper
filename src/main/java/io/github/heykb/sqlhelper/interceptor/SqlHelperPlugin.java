@@ -82,7 +82,9 @@ public class SqlHelperPlugin implements Interceptor {
         SqlSource originSqlSource = mappedStatement.getSqlSource();
         MetaObject metaObject = SystemMetaObject.forObject(mappedStatement);
         try {
-            metaObject.setValue("sqlSource", new MySqlSource(boundSql));
+            if(args.length!=6){
+                metaObject.setValue("sqlSource", new MySqlSource(boundSql));
+            }
             Object re = invocation.proceed();
             if (invocation.getMethod().equals("query") && !CollectionUtils.isEmpty(filterColumns) && !skipAble(re)) {
                 log.warn("降级为结果集过滤列：" + String.join(",", filterColumns));
@@ -90,7 +92,9 @@ public class SqlHelperPlugin implements Interceptor {
             }
             return re;
         } finally {
-            metaObject.setValue("sqlSource", originSqlSource);
+            if(args.length!=6){
+                metaObject.setValue("sqlSource", originSqlSource);
+            }
         }
 
     }
@@ -147,7 +151,6 @@ public class SqlHelperPlugin implements Interceptor {
             }
         }
         // 处理sql
-        String newSql = boundSql.getSql();
         if (handlers.size() > 0 || !CollectionUtils.isEmpty(filterColumns)) {
             DbType dbType = dbtype;
             if (dbType == null) {

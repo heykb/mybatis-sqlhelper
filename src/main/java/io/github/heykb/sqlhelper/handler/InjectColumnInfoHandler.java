@@ -38,7 +38,7 @@ public interface InjectColumnInfoHandler {
     String getColumnName();
 
     /**
-     * 设置注入字段的值
+     * 设置注入字段的值,可以是值、方法甚至是子查询语句
      *
      * @return value
      */
@@ -103,7 +103,7 @@ public interface InjectColumnInfoHandler {
 
     /**
      * 当注入类型为condition时，对是否是最外层语句的条件设置过滤规则
-     * @param isInOuterMost 如果条件语句出现在最外层的sql语句为true(插入语句最外层没有条件所以它的最外层为向内查找的第一个)
+     * @param isInOuterMost 当前要注入的位置是否是最外层 (插入语句最外层没有条件所以它的最外层为向内查找的第一个)
      * @return
      */
     default boolean checkIsInOuterMost(boolean isInOuterMost){

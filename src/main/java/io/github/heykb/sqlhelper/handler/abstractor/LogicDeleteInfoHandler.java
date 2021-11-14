@@ -1,6 +1,7 @@
 package io.github.heykb.sqlhelper.handler.abstractor;
 
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
+import org.apache.ibatis.mapping.SqlCommandType;
 
 /**
  * 实现InjectColumnInfoHandler自动注入配置接口，代表逻辑删除自动注入配置
@@ -39,4 +40,8 @@ public abstract class LogicDeleteInfoHandler implements InjectColumnInfoHandler 
         return CONDITION;
     }
 
+    @Override
+    public boolean checkCommandType(SqlCommandType commandType) {
+        return SqlCommandType.DELETE != commandType;
+    }
 }

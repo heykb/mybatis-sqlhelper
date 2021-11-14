@@ -19,44 +19,45 @@ public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     private String columnName;
     private String notDeletedValue;
 
-    private Set<String> checkTableNames;
+    private Set<String> ignoreMapperIds;
 
-    private List<String> checkMapperIds;
+    private List<String> ignoreTables;
 
-    /**
-     * Gets ignore tables.
-     *
-     * @return the ignore tables
-     */
-    public Set<String> getcheckTableNames() {
-        return checkTableNames;
-    }
-
-    /**
-     * Sets ignore tables.
-     *
-     * @param checkTableNames the ignore tables
-     */
-    public void setcheckTableNames(Set<String> checkTableNames) {
-        this.checkTableNames = checkTableNames;
-    }
 
     /**
      * Gets ignore mapper ids.
      *
      * @return the ignore mapper ids
      */
-    public List<String> getcheckMapperIds() {
-        return checkMapperIds;
+    public Set<String> getIgnoreMapperIds() {
+        return ignoreMapperIds;
     }
 
     /**
      * Sets ignore mapper ids.
      *
-     * @param checkMapperIds the ignore mapper ids
+     * @param ignoreMapperIds the ignore mapper ids
      */
-    public void setcheckMapperIds(List<String> checkMapperIds) {
-        this.checkMapperIds = checkMapperIds;
+    public void setIgnoreMapperIds(Set<String> ignoreMapperIds) {
+        this.ignoreMapperIds = ignoreMapperIds;
+    }
+
+    /**
+     * Gets ignore tables.
+     *
+     * @return the ignore tables
+     */
+    public List<String> getIgnoreTables() {
+        return ignoreTables;
+    }
+
+    /**
+     * Sets ignore tables.
+     *
+     * @param ignoreTables the ignore tables
+     */
+    public void setIgnoreTables(List<String> ignoreTables) {
+        this.ignoreTables = ignoreTables;
     }
 
     @Override
@@ -103,20 +104,20 @@ public class DefaultLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 
     @Override
     public boolean checkTableName(String tableName) {
-        if(checkTableNames==null || checkTableNames.isEmpty()){
-            return false;
+        if(ignoreTables==null || ignoreTables.isEmpty()){
+            return true;
         }
-        return checkTableNames.contains(tableName);
+        return !ignoreTables.contains(tableName);
     }
 
     @Override
     public boolean checkMapperId(String mapperId) {
-        if(checkMapperIds==null || checkMapperIds.isEmpty()){
-            return false;
+        if(ignoreMapperIds==null || ignoreMapperIds.isEmpty()){
+            return true;
         }
-        for(String pattern:checkMapperIds){
-            if(antPathMatcher.match(pattern,mapperId)) {return true;}
+        for(String pattern:ignoreMapperIds){
+            if(antPathMatcher.match(pattern,mapperId)) {return false;}
         }
-        return false;
+        return true;
     }
 }

@@ -12,11 +12,11 @@ public class SqlHelperConfig {
     private DbType dbtype;
     @Value("${sqlhelper.enable:true}")
     private boolean enable;
-    @Value("${sqlhelper.logicDelete.enable:false}")
+    @Value("${sqlhelper.logic-delete.enable:false}")
     private boolean logicDeleteEnable;
-    @Value("${sqlhelper.multiTenant.enable:true}")
+    @Value("${sqlhelper.multi-tenant.enable:false}")
     private boolean multiTenantEnable;
-    @Value("${sqlhelper.selectItem.tbAliasPrefix:inj}")
+    @Value("${sqlhelper.select-item.tbAliasPrefix:inj}")
     private String tbAliasPrefix;
 
     public String getTbAliasPrefix() {
