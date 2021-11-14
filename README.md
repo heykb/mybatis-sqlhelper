@@ -4,7 +4,7 @@
     <dependency>
         <groupId>io.github.heykb</groupId>
         <artifactId>mybatis-sqlHelper</artifactId>
-        <version>1.0</version>
+        <version>1.1</version>
     </dependency>
 ~~~
 文档
