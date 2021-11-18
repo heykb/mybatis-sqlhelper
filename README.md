@@ -1,6 +1,6 @@
 # MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper
 如果您正在使用MyBatis，并且您的项目需要<b>多租户、逻辑删除和数据权限</b>的功能建议您使用，这一定是<b>最方便的</b>方式，使用它对您的现有代码没有侵入，您不需要对现有代码进行任何修改。
-~~~java
+~~~xml
     <dependency>
         <groupId>io.github.heykb</groupId>
         <artifactId>mybatis-sqlHelper</artifactId>
