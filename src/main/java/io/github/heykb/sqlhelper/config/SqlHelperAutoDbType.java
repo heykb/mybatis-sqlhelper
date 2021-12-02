@@ -2,7 +2,6 @@ package io.github.heykb.sqlhelper.config;
 
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.util.StringUtils;
-import com.github.pagehelper.PageException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -31,7 +30,7 @@ public class SqlHelperAutoDbType {
                 }
                 DbType dbType = fromJdbcUrl(url);
                 if (dbType == null) {
-                    throw new SqlHelperException("无法自动获取数据库类型，无法自动获取jdbcUrl，请通过配置指定数据库类型!");
+                    throw new SqlHelperException("无法从"+url+"自动获取数据库类型com.alibaba.druid.DbType，请通过配置指定数据库类型!");
                 }
                 datasourceDbTypeMap.put(dataSource,dbType);
                 return dbType;
@@ -46,7 +45,7 @@ public class SqlHelperAutoDbType {
         final String url = jdbcUrl.toLowerCase();
 
         for (DbType dbType : DbType.values()) {
-            if (url.contains(":" + dbType.name().toLowerCase() + ":")) {
+            if (url.contains(dbType.name().toLowerCase())) {
                 return dbType;
             }
         }
@@ -65,7 +64,7 @@ public class SqlHelperAutoDbType {
             conn = dataSource.getConnection();
             return conn.getMetaData().getURL();
         } catch (SQLException e) {
-            throw new PageException(e);
+            throw new SqlHelperException(e);
         } finally {
             if (conn != null) {
                 try {

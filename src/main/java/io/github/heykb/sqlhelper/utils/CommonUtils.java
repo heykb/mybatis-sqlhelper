@@ -1,9 +1,12 @@
 package io.github.heykb.sqlhelper.utils;
 
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOperator;
+import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 import io.github.heykb.sqlhelper.helper.Configuration;
 import com.google.common.base.CaseFormat;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,5 +48,17 @@ public class CommonUtils {
         return re;
     }
 
+    public static List  getInstanceByClassName(String[] classNames) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        List re = new ArrayList();
+        if(classNames == null || classNames.length==0){
+            return re;
+        }
+        for(String item:classNames){
+            item = item.trim();
+            Object obj = Class.forName(item).newInstance();
+            re.add(obj);
+        }
+        return re;
+    }
 
 }

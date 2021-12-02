@@ -11,7 +11,7 @@ import org.apache.ibatis.mapping.SqlCommandType;
  *
  * @author heykb
  */
-public abstract class TenantInfoHanlder implements InjectColumnInfoHandler {
+public abstract class TenantInfoHandler implements InjectColumnInfoHandler {
     /**
      * 设置代表租户字段名称
      *

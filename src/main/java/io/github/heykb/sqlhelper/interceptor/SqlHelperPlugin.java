@@ -1,14 +1,20 @@
 package io.github.heykb.sqlhelper.interceptor;
 
 import com.alibaba.druid.DbType;
+import com.alibaba.druid.util.StringUtils;
 import io.github.heykb.sqlhelper.config.SqlHelperAutoDbType;
+import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
+import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
+import io.github.heykb.sqlhelper.handler.abstractor.TenantInfoHandler;
 import io.github.heykb.sqlhelper.handler.dynamic.DynamicFindColumnFilterHandler;
 import io.github.heykb.sqlhelper.handler.dynamic.DynamicFindInjectInfoHandler;
 import io.github.heykb.sqlhelper.helper.Configuration;
 import io.github.heykb.sqlhelper.helper.SqlInjectColumnHelper;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
+import lombok.Data;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.logging.Log;
@@ -19,7 +25,6 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.springframework.util.CollectionUtils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -28,7 +33,7 @@ import java.util.stream.Collectors;
 
 /**
  * 字段注入插件
- **/
+ */
 @Intercepts(
         {
                 @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
@@ -36,38 +41,132 @@ import java.util.stream.Collectors;
                 @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
         }
 )
+@Data
 public class SqlHelperPlugin implements Interceptor {
+    /** 一个布尔参数名,用于设置功能的总开关，默认true */
+    public static final String enableProp = "enable";
+    /**
+     * 用于设置数据库类型的参数名称，非特殊不用配置，支持自动获取。
+     */
+    @Deprecated
+    public static final String dbTypeProp = "dbType";
+    /**
+     * 一个布尔参数名,用于设置多租户功能开关，默认true。
+     */
+    public static final String multiTenantEnableProp = "multi-tenant.enable";
+    /**
+     * 一个布尔参数名,用于设置物理删除转逻辑删除功能开关，默认true。
+     */
+    public static final String logicDeleteEnableProp = "logic-delete.enable";
+    /**
+     * 一个逗号分割的全限定类名数组，用于设置注入信息类。
+     */
+    public static final String injectColumnInfoHandlersProp = "InjectColumnInfoHandler";
+    /**
+     * 一个逗号分割的全限定类名数组，用于设置数据权限中的字段过滤信息类的类名。
+     */
+    public static final String columnFilterInfoHandlersProp = "ColumnFilterInfoHandler";
+    /**
+     * 一个全限定类名，用于设置运行期间动态生成注入信息集合的类的类名
+     */
+    public static final String dynamicFindInjectInfoHandlerProp = "DynamicFindInjectInfoHandler";
+    /**
+     * 一个全限定类名，用于设置运行期间动态生成数据权限中的字段过滤信息集合的类的类名
+     */
+    public static final String dynamicFindColumnFilterHandlerProp = "DynamicFindColumnFilterHandler";
     private static final Log log = LogFactory.getLog(SqlHelperPlugin.class);
-    private DbType dbtype;
+    /**
+     * 指定数据库类型。不需要设置，自动解析。
+     */
+    private DbType dbType;
+    /**
+     * 开关插件
+     */
+    private boolean enable = true;
+    /**
+     * 开启关闭逻辑删除转换。关闭后所有TenantInfoHandler注入都失效
+     */
+    private boolean multiTenantEnable  = true;
+    /**
+     * 开启关闭逻辑删除转换。关闭后所有LogicDeleteInfoHandler注入都失效
+     */
+    private boolean logicDeleteEnable  = true;
+    /**
+     * 静态注入信息集合
+     */
     private Collection<InjectColumnInfoHandler> injectColumnInfoHandlers;
+    /**
+     * 数据权限：字段过滤信息集合
+     */
     private Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers;
+    /**
+     * 待定！
+     */
     private String tbAliasPrefix;
+    /**
+     * 注入信息动态获取类集合
+     */
     private DynamicFindInjectInfoHandler dynamicFindInjectInfoHandler;
+    /**
+     * 数据权限：字段过滤信息动态获取集合
+     */
     private DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler;
 
-    public SqlHelperPlugin(DbType dbtype, Collection<InjectColumnInfoHandler> injectColumnInfoHandlers) {
-        this.injectColumnInfoHandlers = injectColumnInfoHandlers;
-        this.dbtype = dbtype;
-    }
-
-    public void setColumnFilterInfoHandlers(Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers) {
-        this.columnFilterInfoHandlers = columnFilterInfoHandlers;
-    }
-
-    public void setDynamicFindInjectInfoHandler(DynamicFindInjectInfoHandler dynamicFindInjectInfoHandler) {
-        this.dynamicFindInjectInfoHandler = dynamicFindInjectInfoHandler;
-    }
-
-    public void setDynamicFindColumnFilterHandler(DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler) {
-        this.dynamicFindColumnFilterHandler = dynamicFindColumnFilterHandler;
-    }
-
-    public void setTbAliasPrefix(String tbAliasPrefix) {
-        this.tbAliasPrefix = tbAliasPrefix;
+    @Override
+    public Object plugin(Object target) {
+        return Plugin.wrap(target, this);
     }
 
     @Override
+    public void setProperties(Properties properties) {
+        if(properties == null){
+            properties = new Properties();
+        }
+        try{
+            this.enable = Boolean.parseBoolean((String) properties.getOrDefault("enable","true")) ;
+            this.multiTenantEnable = Boolean.parseBoolean((String) properties.getOrDefault("multi-tenant.enable","true")) ;
+            this.logicDeleteEnable = Boolean.parseBoolean((String)properties.getOrDefault("logic-delete.enable","true")) ;
+            this.dbType = DbType.of(properties.getProperty("dbType"));
+            this.tbAliasPrefix  = properties.getProperty("tbAliasPrefix");
+            // 读取InjectColumnInfoHandler
+            String commaString = properties.getProperty("InjectColumnInfoHandler");
+            if(!StringUtils.isEmpty(commaString)){
+                String[] classes = commaString.split(",");
+                this.injectColumnInfoHandlers = CommonUtils.getInstanceByClassName(classes);
+            }
+            // 读取DynamicFindInjectInfoHandler
+            String classString = properties.getProperty("DynamicFindInjectInfoHandler");
+            if(!StringUtils.isEmpty(classString)){
+                String[] classes = new String[]{classString};
+                this.dynamicFindInjectInfoHandler = (DynamicFindInjectInfoHandler) CommonUtils.getInstanceByClassName(classes).get(0);
+            }
+            // 读取InjectColumnInfoHandler
+            commaString = properties.getProperty("ColumnFilterInfoHandler");
+            if(!StringUtils.isEmpty(commaString)){
+                String[] classes = commaString.split(",");
+                this.columnFilterInfoHandlers = CommonUtils.getInstanceByClassName(classes);
+            }
+            // 读取DynamicFindInjectInfoHandler
+            classString = properties.getProperty("DynamicFindColumnFilterHandler");
+            if(!StringUtils.isEmpty(classString)){
+                String[] classes = new String[]{classString};
+                this.dynamicFindColumnFilterHandler = (DynamicFindColumnFilterHandler) CommonUtils.getInstanceByClassName(classes).get(0);
+            }
+
+        }catch (Exception e){
+            throw new SqlHelperException("插件属性解析错误");
+        }
+
+    }
+
+
+
+
+    @Override
     public Object intercept(Invocation invocation) throws Throwable {
+        if(!this.enable){
+            return invocation.proceed();
+        }
         Object[] args = invocation.getArgs();
         MappedStatement mappedStatement = (MappedStatement) args[0];
         Object parameter = args[1];
@@ -99,10 +198,18 @@ public class SqlHelperPlugin implements Interceptor {
 
     }
 
+    /**
+     * The type My sql source.
+     */
     class MySqlSource implements SqlSource {
 
         private BoundSql boundSql;
 
+        /**
+         * Instantiates a new My sql source.
+         *
+         * @param boundSql the bound sql
+         */
         public MySqlSource(BoundSql boundSql) {
             this.boundSql = boundSql;
         }
@@ -114,9 +221,37 @@ public class SqlHelperPlugin implements Interceptor {
     }
 
     /**
-     * @param mappedStatement
-     * @param boundSql
-     * @return
+     * 获取可用的注入
+     *
+     * @param handlers    the handlers
+     * @param curMapperId the cur mapper id
+     * @return list list
+     */
+    List<InjectColumnInfoHandler> getEnabledInjectColumnInfoHandler(Collection<InjectColumnInfoHandler> handlers, String curMapperId){
+        List<InjectColumnInfoHandler> re = new ArrayList<>();
+        if(handlers != null){
+            for(InjectColumnInfoHandler item:handlers){
+                if(!multiTenantEnable && item instanceof TenantInfoHandler){
+                    continue;
+                }
+                if(!logicDeleteEnable && item instanceof LogicDeleteInfoHandler){
+                    continue;
+                }
+                if(item.checkMapperId(curMapperId)){
+                    re.add(item);
+                }
+            }
+        }
+        return re;
+    }
+
+
+    /**
+     * Change sql set.
+     *
+     * @param mappedStatement the mapped statement
+     * @param boundSql        the bound sql
+     * @return set set
      */
     Set<String> changeSql(MappedStatement mappedStatement, BoundSql boundSql) {
         List<ResultMap> resultMaps = mappedStatement.getResultMaps();
@@ -128,11 +263,11 @@ public class SqlHelperPlugin implements Interceptor {
         Configuration configuration = new Configuration(resultPropertiesMap, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
         String mapperId = mappedStatement.getId();
         //过滤InjectColumnInfoHandler
-        List<InjectColumnInfoHandler> handlers = this.injectColumnInfoHandlers.stream().filter(handler -> handler.checkMapperId(mapperId)).collect(Collectors.toList());
+        List<InjectColumnInfoHandler> handlers = getEnabledInjectColumnInfoHandler(this.injectColumnInfoHandlers,mapperId);
         if (dynamicFindInjectInfoHandler != null && dynamicFindInjectInfoHandler.checkMapperIds(mapperId)) {
             List<InjectColumnInfoHandler> dynamicHandlers = dynamicFindInjectInfoHandler.findInjectInfoHandlers();
             if (!CollectionUtils.isEmpty(dynamicHandlers)) {
-                handlers.addAll(dynamicHandlers.stream().filter(handler -> handler.checkMapperId(mapperId)).collect(Collectors.toList()));
+                handlers.addAll(getEnabledInjectColumnInfoHandler(dynamicHandlers,mapperId));
             }
         }
         // 获取有无查询列过滤
@@ -152,7 +287,7 @@ public class SqlHelperPlugin implements Interceptor {
         }
         // 处理sql
         if (handlers.size() > 0 || !CollectionUtils.isEmpty(filterColumns)) {
-            DbType dbType = dbtype;
+            DbType dbType = this.dbType;
             if (dbType == null) {
                 dbType = SqlHelperAutoDbType.getDbType(mappedStatement.getConfiguration().getEnvironment().getDataSource());
             }
@@ -236,14 +371,6 @@ public class SqlHelperPlugin implements Interceptor {
         }
     }
 
-    @Override
-    public Object plugin(Object target) {
-        return Plugin.wrap(target, this);
-    }
 
-    @Override
-    public void setProperties(Properties properties) {
-
-    }
 
 }

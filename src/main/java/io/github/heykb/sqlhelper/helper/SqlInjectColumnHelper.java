@@ -13,14 +13,14 @@ import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
 import io.github.heykb.sqlhelper.typeHandler.ColumnFilterTypeHandler;
 import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.type.TypeHandler;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +35,7 @@ import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.*;
 public class SqlInjectColumnHelper {
     private static final Log log = LogFactory.getLog(SqlInjectColumnHelper.class);
     public static final String SUB_QUERY_ALIAS = "_sql_help_";
+    public static final String DEFAULT_TB_ALIAS_PREFIX = "inj";
     private String tbAliasPrefix;
 
     private DbType dbType;
@@ -51,8 +52,11 @@ public class SqlInjectColumnHelper {
      * @param infoHandlers the inject items
      */
     public SqlInjectColumnHelper(DbType dbType, Collection<InjectColumnInfoHandler> infoHandlers, String tbAliasPrefix) {
-        Assert.notNull(tbAliasPrefix, "tbAliasPrefix arg ant not be null");
-        this.tbAliasPrefix = tbAliasPrefix;
+        if(tbAliasPrefix == null){
+            this.tbAliasPrefix = DEFAULT_TB_ALIAS_PREFIX;
+        }else{
+            this.tbAliasPrefix = tbAliasPrefix;
+        }
         this.dbType = dbType;
         this.infoHandlers = infoHandlers;
         if (this.infoHandlers == null) {
@@ -67,7 +71,7 @@ public class SqlInjectColumnHelper {
     }
 
     public SqlInjectColumnHelper(DbType dbType, Collection<InjectColumnInfoHandler> infoHandlers) {
-        this(dbType, infoHandlers, "inj");
+        this(dbType, infoHandlers, DEFAULT_TB_ALIAS_PREFIX);
     }
 
     public void setConfiguration(Configuration configuration) {
@@ -299,13 +303,14 @@ public class SqlInjectColumnHelper {
             SQLExpr onCondition = joinObject.getCondition();
             SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
             // 处理左外连接添加condition的位置
-            if (left instanceof SQLExprTableSource && joinType != LEFT_OUTER_JOIN && joinType != FULL_OUTER_JOIN) {
+            if(left instanceof  SQLExprTableSource && (joinType == RIGHT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
                 String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
                 onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition, commandType, isInOuterMost);
-            } else {
+            }else{
                 addCondition2Query(queryBody, left, isInOuterMost, commandType);
             }
-            if (right instanceof SQLExprTableSource && joinType != RIGHT_OUTER_JOIN && joinType != FULL_OUTER_JOIN) {
+            // 处理右外连接添加condition的位置
+            if(right instanceof  SQLExprTableSource && (joinType == LEFT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
                 String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
                 onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition, commandType, isInOuterMost);
             } else {
