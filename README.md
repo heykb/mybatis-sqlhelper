@@ -266,7 +266,7 @@ public class SimpleTenantInfoHandler extends TenantInfoHandler {
 <plugins>
     <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
       <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.primary.handlers.SimpleTenantInfoHandler"/>
+                value="io.github.heykb.sqlhelper.primary.handlers.SimpleLogicDeleteInfoHandler"/>
     </plugin>
   </plugins>
 ~~~
@@ -274,7 +274,7 @@ public class SimpleTenantInfoHandler extends TenantInfoHandler {
 ~~~java
 public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     @Override
-    public String getSqlDemo() {
+    public String getDeleteSqlDemo() {
         return "UPDATE xx SET is_deleted = 'Y'";
     }
 
@@ -286,6 +286,11 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     @Override
     public String getColumnName() {
         return "is_deleted";
+    }
+
+    @Override
+    public boolean checkMapperId(String mapperId) {
+        return !mapperId.contains("noPlugin");
     }
 }
 ~~~

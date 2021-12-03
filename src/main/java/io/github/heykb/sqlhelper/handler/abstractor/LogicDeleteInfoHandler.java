@@ -12,12 +12,12 @@ import org.apache.ibatis.mapping.SqlCommandType;
  */
 public abstract class LogicDeleteInfoHandler implements InjectColumnInfoHandler {
     /**
-     * 设置逻辑删除实例：update xx set status = false where id = 'xx'
+     * 设置逻辑删除实例：update xx set status = false
      * （其中表名和where条件会在运行中被替换）
      *
      * @return sql demo
      */
-    public abstract String getSqlDemo();
+    public abstract String getDeleteSqlDemo();
 
     /**
      * 设置正常未被删除时，逻辑删除字段的value

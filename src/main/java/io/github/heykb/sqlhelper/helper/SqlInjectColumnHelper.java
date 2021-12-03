@@ -331,7 +331,7 @@ public class SqlInjectColumnHelper {
         if (logicDeleteInfoHandler == null) {
             return sqlStatement;
         }
-        SQLStatement logicSqlStatement = SQLUtils.parseSingleStatement(logicDeleteInfoHandler.getSqlDemo(), dbType);
+        SQLStatement logicSqlStatement = SQLUtils.parseSingleStatement(logicDeleteInfoHandler.getDeleteSqlDemo(), dbType);
         if (logicSqlStatement instanceof SQLUpdateStatement) {
             log.warn(String.format("表%s转逻辑删除", SQLUtils.normalize(sqlStatement.getTableName().getSimpleName())));
             SQLUpdateStatement updateStatement = (SQLUpdateStatement) logicSqlStatement;

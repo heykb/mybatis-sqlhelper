@@ -4,7 +4,7 @@ import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
 
 public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
     @Override
-    public String getSqlDemo() {
+    public String getDeleteSqlDemo() {
         return "UPDATE xx SET is_deleted = 'Y'";
     }
 
