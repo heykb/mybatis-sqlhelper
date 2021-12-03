@@ -21,6 +21,11 @@
 * 将多租户、逻辑删除与应用程序解耦，随配随用
 * 强大的字段自动注入能力（<i>查询条件注入/插入语句注入/更新语句注入/查询列过滤</i>），定制其他业务逻辑
 * 支持多种数据库（基于阿里 druid sql解析器）
+## 关联
+1. [MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)
+2. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
+3. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
+
 
 ## 在mybatis.xml中配置插件
 ~~~xml
@@ -300,9 +305,7 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 ## 使用数据权限
 [数据权限专篇](./README_DATA_PERMISSION.md)
 
-## 与spring 集成
-1. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
-2. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
+
 
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)
  
