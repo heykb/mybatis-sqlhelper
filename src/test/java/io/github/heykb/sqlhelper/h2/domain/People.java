@@ -22,4 +22,5 @@ public class People {
     private String createdBy;
     private String updatedBy;
     private String tenantId;
+    private Boolean enable = true;
 }

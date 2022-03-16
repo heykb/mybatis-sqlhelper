@@ -7,11 +7,12 @@ import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.*;
 import com.alibaba.druid.util.StringUtils;
+import com.sun.istack.internal.Nullable;
+import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.handler.ConditionInjectInfo;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
 import io.github.heykb.sqlhelper.typeHandler.ColumnFilterTypeHandler;
-import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.logging.Log;
@@ -20,7 +21,6 @@ import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.type.TypeHandler;
-
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,7 +35,10 @@ import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.*;
 public class SqlInjectColumnHelper {
     private static final Log log = LogFactory.getLog(SqlInjectColumnHelper.class);
     public static final String SUB_QUERY_ALIAS = "_sql_help_";
-    public static final String DEFAULT_TB_ALIAS_PREFIX = "inj";
+    public static final String DEFAULT_TB_ALIAS_PREFIX = "inj_";
+
+    private String tbPrefix;
+
     private String tbAliasPrefix;
 
     private DbType dbType;
@@ -46,12 +49,13 @@ public class SqlInjectColumnHelper {
 
     private Configuration configuration;
 
+
     /**
      * Instantiates a new Sql inject column helper.
      *
      * @param infoHandlers the inject items
      */
-    public SqlInjectColumnHelper(DbType dbType, Collection<InjectColumnInfoHandler> infoHandlers, String tbAliasPrefix) {
+    public SqlInjectColumnHelper(DbType dbType, Collection<InjectColumnInfoHandler> infoHandlers, @Nullable String tbAliasPrefix) {
         if(tbAliasPrefix == null){
             this.tbAliasPrefix = DEFAULT_TB_ALIAS_PREFIX;
         }else{
@@ -149,25 +153,65 @@ public class SqlInjectColumnHelper {
 //        }
     }
 
+    public static void main(String[] args) {
+//        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
+//        String sql = "select * from user s where s.name='333'";
+//        String sql = "select inj.xx,yy from (select inj.yy from tab t where id = 2 and name = 'wenshao') s where s.name='333'";
+//        String sql = "select u.*,g.name from user u join user_group g on u.groupId=g.groupId where u.name='123'";
+//        String sql = "select tenant_id from people where id in (select id from user s)";
+//        String sql = "update user u set ds=?, u.name=?,id='fdf' ,ddd=? where id =?";
+//        String sql = "delete from user where id = ( select id from user s )";
+//        String sql = "insert into user (id,name) values('0','heykb')";
+//        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
+//        String sql = "SELECT * FROM \"a\" left JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
+        String sql = "SELECT * FROM (select * from user where id = 2) s";
+        InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
+            @Override
+            public String getColumnName() {
+                return "tenant_id";
+            }
+            @Override
+            public String getValue() {
+                return "sqlhelper";
+            }
+            @Override
+            public int getInjectTypes() {
+                return INSERT;
+            }
+            @Override
+            public boolean checkCommandType(SqlCommandType commandType) {
+                return true;
+            }
+            @Override
+            public boolean checkTableName(String tableName) {
+                return true;
+            }
+        };
+        SqlInjectColumnHelper helper = new SqlInjectColumnHelper(DbType.postgresql, Arrays.asList(right));
+        helper.setConfiguration(new Configuration());
+        String re = helper.handleSql(sql, null/*Arrays.asList("id")*/, null);
+        System.out.println(re);
+    }
+
     /**
      * 为sql语句注入字段
      *
      * @param sql the sql
      * @return the string
      */
-    public String handlerSql(String sql) {
-        return handlerSql(sql, null, null);
+    public String handleSql(String sql) {
+        return handleSql(sql, null, null);
     }
 
     /**
      * 为sql语句注入字段
      * 为select语句过滤结果字段
-     *
      * @param sql
      * @param filterColumns
+     * @param parameterMappings
      * @return
      */
-    public String handlerSql(String sql, Collection<String> filterColumns, List<ParameterMapping> parameterMappings) {
+    public String handleSql(String sql, Collection<String> filterColumns, List<ParameterMapping> parameterMappings) {
         SQLStatement sqlStatement = SQLUtils.parseSingleStatement(sql, this.dbType);
         SqlCommandType commandType = null;
         if (sqlStatement instanceof SQLSelectStatement) {
@@ -209,9 +253,7 @@ public class SqlInjectColumnHelper {
         return re;
     }
 
-
     public SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns) {
-
         final SQLStatement tmp = SQLUtils.parseSingleStatement("select * from a", dbType);
         if (CollectionUtils.isEmpty(filterColumns)) {
             return originSql;
@@ -275,55 +317,7 @@ public class SqlInjectColumnHelper {
         }
     }
 
-
-    /**
-     * 为查询语句添加附加条件（包括where中的子查询、from的子查询、以及表连接添加过滤条件）
-     *
-     * @param queryBody
-     * @param fromBody
-     * @param isInOuterMost 当前查询是否是最外层sql
-     */
-    private void addCondition2Query(SQLSelectQueryBlock queryBody, SQLTableSource fromBody, boolean isInOuterMost, SqlCommandType commandType) {
-        if (isInOuterMost) {
-            addSelectItem2Query(queryBody);
-        } else {
-            addSelectItem2Query(queryBody, true);
-        }
-        SQLExpr originCondition = queryBody.getWhere();
-        if (fromBody instanceof SQLExprTableSource) {
-            String tableName = SQLUtils.normalize(((SQLExprTableSource) fromBody).getTableName());
-            String alias = fromBody.getAlias();
-            addCondition2QueryInWhere(originCondition, commandType);
-            originCondition = newEqualityCondition(tableName, alias, originCondition, commandType, isInOuterMost);
-            queryBody.setWhere(originCondition);
-        } else if (fromBody instanceof SQLJoinTableSource) {
-            SQLJoinTableSource joinObject = (SQLJoinTableSource) fromBody;
-            SQLTableSource left = joinObject.getLeft();
-            SQLTableSource right = joinObject.getRight();
-            SQLExpr onCondition = joinObject.getCondition();
-            SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
-            // 处理左外连接添加condition的位置
-            if(left instanceof  SQLExprTableSource && (joinType == RIGHT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
-                String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
-                onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition, commandType, isInOuterMost);
-            }else{
-                addCondition2Query(queryBody, left, isInOuterMost, commandType);
-            }
-            // 处理右外连接添加condition的位置
-            if(right instanceof  SQLExprTableSource && (joinType == LEFT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
-                String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
-                onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition, commandType, isInOuterMost);
-            } else {
-                addCondition2Query(queryBody, right, isInOuterMost, commandType);
-            }
-            joinObject.setCondition(onCondition);
-        } else if (fromBody instanceof SQLSubqueryTableSource) {
-            SQLSelect subSelectObject = ((SQLSubqueryTableSource) fromBody).getSelect();
-            SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
-            addCondition2Query(subQueryObject, subQueryObject.getFrom(), isInOuterMost, commandType);
-        } else {
-            throw new SqlHelperException("未处理的异常");
-        }
+    void addTbPrefix2Sql(SQLStatement sqlStatement) {
 
     }
 
@@ -449,39 +443,54 @@ public class SqlInjectColumnHelper {
     }
 
     /**
-     * 返回添加了附加条件的condition语句
+     * 为查询语句添加附加条件（包括where中的子查询、from的子查询、以及表连接添加过滤条件）
      *
-     * @param tableName       the table name
-     * @param tableAlias      the table alias
-     * @param originCondition the origin condition
-     * @return the sql expr
+     * @param queryBody
+     * @param fromBody
+     * @param isFirstLevelQuery 当前queryBody是否第一层级别的查询块
      */
-    private SQLExpr newEqualityCondition(String tableName, String tableAlias, SQLExpr originCondition, SqlCommandType commandType, boolean isInOuterMost) {
-        SQLExpr re = originCondition;
-
-        for (InjectColumnInfoHandler infoHandler : infoHandlers) {
-            if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.CONDITION) > 0) {
-                if (!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(commandType) || !infoHandler.checkIsInOuterMost(isInOuterMost)) {
-                    continue;
-                }
-                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.configuration);
-                if (columnName != null && infoHandler.isExistSkip() && contains(originCondition, columnName)) {
-                    continue;
-                }
-                SQLExpr condition = null;
-
-                if (infoHandler instanceof ConditionInjectInfo) {
-                    condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias, dbType, configuration);
-                } else {
-                    String aliasFieldName = StringUtils.isEmpty(tableAlias) ? tableName + "." + columnName : tableAlias + "." + columnName;
-                    condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
-
-                }
-                log.warn(String.format("表%s添加过滤条件：%s", tableName, condition.toString()));
-                re = re == null ? condition : SQLUtils.buildCondition(SQLBinaryOperator.BooleanAnd, condition, false, re);
-            }
+    private void addCondition2Query(SQLSelectQueryBlock queryBody, SQLTableSource fromBody, boolean isFirstLevelQuery, SqlCommandType commandType) {
+        if (isFirstLevelQuery) {
+            addSelectItem2Query(queryBody);
+        } else {
+            addSelectItem2Query(queryBody, true);
         }
-        return re;
+        SQLExpr originCondition = queryBody.getWhere();
+        if (fromBody instanceof SQLExprTableSource) {
+            String tableName = SQLUtils.normalize(((SQLExprTableSource) fromBody).getTableName());
+            String alias = fromBody.getAlias();
+            addCondition2QueryInWhere(originCondition, commandType);
+            originCondition = newEqualityCondition(tableName, alias, originCondition, commandType, isFirstLevelQuery);
+            queryBody.setWhere(originCondition);
+        } else if (fromBody instanceof SQLJoinTableSource) {
+            SQLJoinTableSource joinObject = (SQLJoinTableSource) fromBody;
+            SQLTableSource left = joinObject.getLeft();
+            SQLTableSource right = joinObject.getRight();
+            SQLExpr onCondition = joinObject.getCondition();
+            SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
+            // 处理左外连接添加condition的位置
+            if(left instanceof  SQLExprTableSource && (joinType == RIGHT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
+                String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
+                onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition, commandType, isFirstLevelQuery);
+            }else{
+                addCondition2Query(queryBody, left, isFirstLevelQuery, commandType);
+            }
+            // 处理右外连接添加condition的位置
+            if(right instanceof  SQLExprTableSource && (joinType == LEFT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)){
+                String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
+                onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition, commandType, isFirstLevelQuery);
+            } else {
+                addCondition2Query(queryBody, right, isFirstLevelQuery, commandType);
+            }
+            joinObject.setCondition(onCondition);
+        } else if (fromBody instanceof SQLSubqueryTableSource) {
+            SQLSelect subSelectObject = ((SQLSubqueryTableSource) fromBody).getSelect();
+            SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
+            addCondition2Query(subQueryObject, subQueryObject.getFrom(), isFirstLevelQuery, commandType);
+        } else {
+            throw new SqlHelperException("未处理的异常");
+        }
+
     }
 
     /**
@@ -520,44 +529,39 @@ public class SqlInjectColumnHelper {
         return false;
     }
 
+    /**
+     * 返回添加了附加条件的condition语句
+     *
+     * @param tableName       the table name
+     * @param tableAlias      the table alias
+     * @param originCondition the origin condition
+     * @return the sql expr
+     */
+    private SQLExpr newEqualityCondition(String tableName, String tableAlias, SQLExpr originCondition, SqlCommandType commandType, boolean isFirstLevelQuery) {
+        SQLExpr re = originCondition;
 
-    public static void main(String[] args) {
-//        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
-//        String sql = "select * from user s where s.name='333'";
-//        String sql = "select inj.xx,yy from (select inj.yy from tab t where id = 2 and name = 'wenshao') s where s.name='333'";
-//        String sql = "select u.*,g.name from user u join user_group g on u.groupId=g.groupId where u.name='123'";
-//        String sql = "select tenant_id from people where id in (select id from user s)";
-//        String sql = "update user u set ds=?, u.name=?,id='fdf' ,ddd=? where id =?";
-//        String sql = "delete from user where id = ( select id from user s )";
-//        String sql = "insert into user (id,name) values('0','heykb')";
-//        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
-//        String sql = "SELECT * FROM \"a\" left JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
-        String sql = "SELECT * FROM (select * from user where id = 2) s";
-        InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
-            @Override
-            public String getColumnName() {
-                return "tenant_id";
+        for (InjectColumnInfoHandler infoHandler : infoHandlers) {
+            if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.CONDITION) > 0) {
+                if (!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(commandType) || !infoHandler.checkIsFirstLevelQuery(isFirstLevelQuery)) {
+                    continue;
+                }
+                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.configuration);
+                if (columnName != null && infoHandler.isExistSkip() && contains(originCondition, columnName)) {
+                    continue;
+                }
+                SQLExpr condition = null;
+
+                if (infoHandler instanceof ConditionInjectInfo) {
+                    condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias, dbType, configuration);
+                } else {
+                    String aliasFieldName = StringUtils.isEmpty(tableAlias) ? tableName + "." + columnName : tableAlias + "." + columnName;
+                    condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
+
+                }
+                log.warn(String.format("表%s添加过滤条件：%s", tableName, condition.toString()));
+                re = re == null ? condition : SQLUtils.buildCondition(SQLBinaryOperator.BooleanAnd, condition, false, re);
             }
-            @Override
-            public String getValue() {
-                return "sqlhelper";
-            }
-            @Override
-            public int getInjectTypes() {
-                return INSERT;
-            }
-            @Override
-            public boolean checkCommandType(SqlCommandType commandType) {
-                return true;
-            }
-            @Override
-            public boolean checkTableName(String tableName) {
-                return true;
-            }
-        };
-        SqlInjectColumnHelper helper = new SqlInjectColumnHelper(DbType.postgresql, Arrays.asList(right));
-        helper.setConfiguration(new Configuration());
-        String re = helper.handlerSql(sql, null/*Arrays.asList("id")*/, null);
-        System.out.println(re);
+        }
+        return re;
     }
 }

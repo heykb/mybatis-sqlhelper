@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.primary.handlers;
+package io.github.heykb.sqlhelper.h2.handlers;
 
 import io.github.heykb.sqlhelper.handler.abstractor.TenantInfoHandler;
 
@@ -6,7 +6,7 @@ import io.github.heykb.sqlhelper.handler.abstractor.TenantInfoHandler;
  * @author heykb
  */
 public class SimpleTenantInfoHandler extends TenantInfoHandler {
-    public static final String TENANT_ID = "1";
+    public static final String TENANT_ID = "tenant_1";
     @Override
     public String getTenantIdColumn() {
         return "tenant_id";

@@ -8,6 +8,7 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,7 +20,7 @@ public class BaseDataUtils {
         try (Connection connection = ds.getConnection()) {
             ScriptRunner runner = new ScriptRunner(connection);
             runner.setAutoCommit(true);
-            runner.setStopOnError(false);
+            runner.setStopOnError(true);
             runner.setLogWriter(null);
             runner.setErrorLogWriter(null);
             runScript(runner, resource);

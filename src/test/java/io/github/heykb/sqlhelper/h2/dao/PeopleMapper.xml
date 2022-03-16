@@ -60,7 +60,7 @@
 
     <select id="leftJoinSelect" resultMap="BaseResultMap">
         SELECT p.*
-        FROM people p left join "department" d on p.dept_id = d.dept_id
+        FROM people p left join department d on p.dept_id = d.dept_id
         WHERE p.id = #{id}
     </select>
 

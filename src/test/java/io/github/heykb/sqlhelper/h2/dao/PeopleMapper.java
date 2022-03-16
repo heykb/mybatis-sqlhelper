@@ -1,8 +1,9 @@
 package io.github.heykb.sqlhelper.h2.dao;
 
 import io.github.heykb.sqlhelper.h2.domain.People;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.cursor.Cursor;
+import org.apache.ibatis.mapping.ResultSetType;
 
 import java.util.List;
 
@@ -38,6 +39,13 @@ public interface PeopleMapper {
     * @author kb
     **/
     List<People> selectList(People people);
+
+    @Select("select * from people")
+    List<People> selectList2(People people);
+
+    @Options(resultSetType = ResultSetType.FORWARD_ONLY)
+    @Select("select * from people")
+    Cursor<People> selectCursor(People people);
 
 
     People leftJoinSelect(@Param("id") String id);

@@ -7,7 +7,7 @@
   <plugins>
     <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
       <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.h2.handlers.SimpleLogicDeleteInfoHandler"/>
+                value="io.github.heykb.sqlhelper.h2.handlers.SimpleTenantInfoHandler"/>
     </plugin>
   </plugins>
   <environments default="development">
@@ -23,7 +23,6 @@
     </environment>
   </environments>
   <mappers>
-    <mapper resource="io/github/heykb/sqlhelper/h2/dao/EmployeeMapper.xml"/>
-    <mapper resource="io/github/heykb/sqlhelper/h2/dao/PeopleMapper.xml"/>
+    <package name="io.github.heykb.sqlhelper.h2.dao"/>
   </mappers>
 </configuration>

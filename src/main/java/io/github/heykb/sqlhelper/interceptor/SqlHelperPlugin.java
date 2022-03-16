@@ -16,18 +16,17 @@ import io.github.heykb.sqlhelper.utils.CommonUtils;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.cache.CacheKey;
+import org.apache.ibatis.cursor.Cursor;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +38,7 @@ import java.util.stream.Collectors;
                 @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
                 @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
                 @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
+                @Signature(type = Executor.class, method = "queryCursor", args = {MappedStatement.class, Object.class, RowBounds.class}),
         }
 )
 @Data
@@ -171,55 +171,64 @@ public class SqlHelperPlugin implements Interceptor {
         MappedStatement mappedStatement = (MappedStatement) args[0];
         Object parameter = args[1];
         BoundSql boundSql = null;
+        boolean useTempMappedStatement = true;
         //由于逻辑关系，只会进入一次
         if (args.length == 6) {
             boundSql = (BoundSql) args[5];
+            useTempMappedStatement = false;
         } else {
             boundSql = mappedStatement.getBoundSql(parameter);
         }
-        Set<String> filterColumns = changeSql(mappedStatement, boundSql);
-        SqlSource originSqlSource = mappedStatement.getSqlSource();
-        MetaObject metaObject = SystemMetaObject.forObject(mappedStatement);
-        try {
-            if(args.length!=6){
-                metaObject.setValue("sqlSource", new MySqlSource(boundSql));
-            }
-            Object re = invocation.proceed();
-            if (invocation.getMethod().equals("query") && !CollectionUtils.isEmpty(filterColumns) && !skipAble(re)) {
-                log.warn("降级为结果集过滤列：" + String.join(",", filterColumns));
-                filterColumns(re, filterColumns, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
-            }
-            return re;
-        } finally {
-            if(args.length!=6){
-                metaObject.setValue("sqlSource", originSqlSource);
+        DbType dbType = SqlHelperAutoDbType.getDbType(mappedStatement.getConfiguration().getEnvironment().getDataSource());
+        Set<String> filterColumns = changeSql(mappedStatement, boundSql, dbType);
+        if (useTempMappedStatement) {
+            args[0] = newMappedStatement(mappedStatement, boundSql);
+        }
+        Object re = invocation.proceed();
+        if (!CollectionUtils.isEmpty(filterColumns)) {
+            log.warn("降级为结果集过滤列：" + String.join(",", filterColumns));
+            String methodName = invocation.getMethod().getName();
+            if (re instanceof Cursor) {
+                return new ColumnFilterCursor((Cursor) re, filterColumns, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
+            } else if ("query".equals(methodName) && !skipAble(re)) {
+                CommonUtils.filterColumns(re, filterColumns, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
             }
         }
-
+        return re;
     }
 
-    /**
-     * The type My sql source.
-     */
-    class MySqlSource implements SqlSource {
-
-        private BoundSql boundSql;
-
-        /**
-         * Instantiates a new My sql source.
-         *
-         * @param boundSql the bound sql
-         */
-        public MySqlSource(BoundSql boundSql) {
-            this.boundSql = boundSql;
+    MappedStatement newMappedStatement(MappedStatement source, BoundSql boundSql) {
+        MappedStatement.Builder builder = new MappedStatement.Builder(source.getConfiguration(), source.getId(), new SqlSource() {
+            @Override
+            public BoundSql getBoundSql(Object parameterObject) {
+                return boundSql;
+            }
+        }, source.getSqlCommandType());
+        builder.resource(source.getResource());
+        builder.parameterMap(source.getParameterMap());
+        builder.resultMaps(source.getResultMaps());
+        builder.fetchSize(source.getFetchSize());
+        builder.timeout(source.getFetchSize());
+        builder.statementType(source.getStatementType());
+        builder.resultSetType(source.getResultSetType());
+        builder.cache(source.getCache());
+        builder.flushCacheRequired(source.isFlushCacheRequired());
+        builder.useCache(source.isUseCache());
+        builder.resultOrdered(source.isResultOrdered());
+        builder.keyGenerator(source.getKeyGenerator());
+        if (source.getKeyProperties() != null) {
+            builder.keyProperty(String.join(",", source.getKeyProperties()));
         }
-
-        @Override
-        public BoundSql getBoundSql(Object parameterObject) {
-            return boundSql;
+        if (source.getKeyColumns() != null) {
+            builder.keyColumn(String.join(",", source.getKeyColumns()));
         }
+        builder.databaseId(source.getDatabaseId());
+        builder.lang(source.getLang());
+        if (source.getResultSets() != null) {
+            builder.resultSets(String.join(",", source.getResultSets()));
+        }
+        return builder.build();
     }
-
     /**
      * 获取可用的注入
      *
@@ -227,7 +236,7 @@ public class SqlHelperPlugin implements Interceptor {
      * @param curMapperId the cur mapper id
      * @return list list
      */
-    List<InjectColumnInfoHandler> getEnabledInjectColumnInfoHandler(Collection<InjectColumnInfoHandler> handlers, String curMapperId){
+    List<InjectColumnInfoHandler> getEnabledInjectColumnInfoHandler(String curMapperId, Collection<InjectColumnInfoHandler> handlers, DynamicFindInjectInfoHandler dynamicFindInjectInfoHandler) {
         List<InjectColumnInfoHandler> re = new ArrayList<>();
         if(handlers != null){
             for(InjectColumnInfoHandler item:handlers){
@@ -242,10 +251,35 @@ public class SqlHelperPlugin implements Interceptor {
                 }
             }
         }
+        if (dynamicFindInjectInfoHandler != null && dynamicFindInjectInfoHandler.checkMapperIds(curMapperId)) {
+            List<InjectColumnInfoHandler> dynamicHandlers = dynamicFindInjectInfoHandler.findInjectInfoHandlers();
+            if (!CollectionUtils.isEmpty(dynamicHandlers)) {
+                re.addAll(getEnabledInjectColumnInfoHandler(curMapperId, dynamicHandlers, null));
+            }
+        }
         return re;
     }
 
 
+    Set<String> getFilterColumns(MappedStatement mappedStatement, Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers, DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler) {
+        Set<String> filterColumns = null;
+        String mapperId = mappedStatement.getId();
+        if (mappedStatement.getSqlCommandType() == SqlCommandType.SELECT || mappedStatement.getSqlCommandType() == SqlCommandType.UPDATE) {
+            if (columnFilterInfoHandlers != null) {
+                filterColumns = columnFilterInfoHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
+                        .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet());
+                if (dynamicFindColumnFilterHandler != null && dynamicFindColumnFilterHandler.checkMapperIds(mapperId)) {
+                    List<ColumnFilterInfoHandler> dynamicHandlers = dynamicFindColumnFilterHandler.findColumnFilterHandlers();
+                    if (!CollectionUtils.isEmpty(dynamicHandlers)) {
+                        filterColumns.addAll(dynamicHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
+                                .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet()));
+                    }
+                }
+            }
+        }
+        return filterColumns;
+
+    }
     /**
      * Change sql set.
      *
@@ -253,7 +287,7 @@ public class SqlHelperPlugin implements Interceptor {
      * @param boundSql        the bound sql
      * @return set set
      */
-    Set<String> changeSql(MappedStatement mappedStatement, BoundSql boundSql) {
+    Set<String> changeSql(MappedStatement mappedStatement, BoundSql boundSql, DbType dbType) {
         List<ResultMap> resultMaps = mappedStatement.getResultMaps();
         Map<String, String> resultPropertiesMap = new HashMap<>();
         for (ResultMap resultMap : resultMaps) {
@@ -263,37 +297,14 @@ public class SqlHelperPlugin implements Interceptor {
         Configuration configuration = new Configuration(resultPropertiesMap, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
         String mapperId = mappedStatement.getId();
         //过滤InjectColumnInfoHandler
-        List<InjectColumnInfoHandler> handlers = getEnabledInjectColumnInfoHandler(this.injectColumnInfoHandlers,mapperId);
-        if (dynamicFindInjectInfoHandler != null && dynamicFindInjectInfoHandler.checkMapperIds(mapperId)) {
-            List<InjectColumnInfoHandler> dynamicHandlers = dynamicFindInjectInfoHandler.findInjectInfoHandlers();
-            if (!CollectionUtils.isEmpty(dynamicHandlers)) {
-                handlers.addAll(getEnabledInjectColumnInfoHandler(dynamicHandlers,mapperId));
-            }
-        }
+        List<InjectColumnInfoHandler> handlers = getEnabledInjectColumnInfoHandler(mapperId, injectColumnInfoHandlers, dynamicFindInjectInfoHandler);
         // 获取有无查询列过滤
-        Set<String> filterColumns = null;
-        if (mappedStatement.getSqlCommandType() == SqlCommandType.SELECT || mappedStatement.getSqlCommandType() == SqlCommandType.UPDATE) {
-            if (columnFilterInfoHandlers != null) {
-                filterColumns = columnFilterInfoHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
-                        .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet());
-                if (dynamicFindColumnFilterHandler != null && dynamicFindInjectInfoHandler.checkMapperIds(mapperId)) {
-                    List<ColumnFilterInfoHandler> dynamicHandlers = dynamicFindColumnFilterHandler.findColumnFilterHandlers();
-                    if (!CollectionUtils.isEmpty(dynamicHandlers)) {
-                        filterColumns.addAll(dynamicHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
-                                .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet()));
-                    }
-                }
-            }
-        }
+        Set<String> filterColumns = getFilterColumns(mappedStatement, columnFilterInfoHandlers, dynamicFindColumnFilterHandler);
         // 处理sql
         if (handlers.size() > 0 || !CollectionUtils.isEmpty(filterColumns)) {
-            DbType dbType = this.dbType;
-            if (dbType == null) {
-                dbType = SqlHelperAutoDbType.getDbType(mappedStatement.getConfiguration().getEnvironment().getDataSource());
-            }
             SqlInjectColumnHelper sqlInjectColumnHelper = new SqlInjectColumnHelper(dbType, handlers, this.tbAliasPrefix);
             sqlInjectColumnHelper.setConfiguration(configuration);
-            SystemMetaObject.forObject(boundSql).setValue("sql", sqlInjectColumnHelper.handlerSql(boundSql.getSql(), filterColumns, boundSql.getParameterMappings()));
+            SystemMetaObject.forObject(boundSql).setValue("sql", sqlInjectColumnHelper.handleSql(boundSql.getSql(), filterColumns, boundSql.getParameterMappings()));
         }
         return filterColumns;
     }
@@ -314,63 +325,7 @@ public class SqlHelperPlugin implements Interceptor {
             return list.size() <= 0 || skipAble(list.iterator().next());
         }
         return false;
-
     }
-
-    private void filterColumns(Object o, Set<String> ignoreColumns, boolean isMapUnderscoreToCamelCase) {
-        if (o == null || CollectionUtils.isEmpty(ignoreColumns)) {
-            return;
-        }
-        if (CommonUtils.isPrimitiveOrWrap(o.getClass())) {
-            return;
-        } else if (o instanceof String) {
-            return;
-        } else if (o.getClass().isArray()) {
-            int length = Array.getLength(o);
-            for (int i = 0; i < length; i++) {
-                filterColumns(Array.get(o, i), ignoreColumns, isMapUnderscoreToCamelCase);
-            }
-        } else if (Collection.class.isAssignableFrom(o.getClass())) {
-            for (Object item : (Collection) o) {
-                filterColumns(item, ignoreColumns, isMapUnderscoreToCamelCase);
-            }
-        } else if (Map.class.isAssignableFrom(o.getClass())) {
-            List<String> removeKeys = new ArrayList<>();
-            Map<String, Object> map = (Map<String, Object>) o;
-            for (String key : map.keySet()) {
-                for (String column : ignoreColumns) {
-                    if (ignoreColumns.contains(column)) {
-                        removeKeys.add(key);
-                    }
-                }
-            }
-            for (String key : removeKeys) {
-                map.remove(key);
-            }
-        } else {
-            Class clazz = o.getClass();
-            Field[] fields = clazz.getDeclaredFields();
-            for (Field field : fields) {
-                field.setAccessible(true);
-                for (String column : ignoreColumns) {
-                    boolean founded = false;
-                    String name = field.getName();
-                    if (name.equals(column)) {
-                        founded = true;
-                    } else if (isMapUnderscoreToCamelCase && name.equalsIgnoreCase(column.replace("_", ""))) {
-                        founded = true;
-                    }
-                    if (founded) {
-                        try {
-                            field.set(o, null);
-                        } catch (IllegalAccessException e) {
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 
 
 }

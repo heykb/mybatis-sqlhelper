@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS employees;
 create table employees (
     id integer not null,
     is_deleted char(1) default 'N' not null

@@ -1,13 +1,13 @@
 package io.github.heykb.sqlhelper.utils;
 
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOperator;
-import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
-import io.github.heykb.sqlhelper.helper.Configuration;
 import com.google.common.base.CaseFormat;
+import io.github.heykb.sqlhelper.helper.Configuration;
+import org.apache.commons.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * @author heykb
@@ -60,5 +60,61 @@ public class CommonUtils {
         }
         return re;
     }
+
+
+    public static void filterColumns(Object o, Set<String> ignoreColumns, boolean isMapUnderscoreToCamelCase) {
+        if (o == null || CollectionUtils.isEmpty(ignoreColumns)) {
+            return;
+        }
+        if (CommonUtils.isPrimitiveOrWrap(o.getClass())) {
+            return;
+        } else if (o instanceof String) {
+            return;
+        } else if (o.getClass().isArray()) {
+            int length = Array.getLength(o);
+            for (int i = 0; i < length; i++) {
+                filterColumns(Array.get(o, i), ignoreColumns, isMapUnderscoreToCamelCase);
+            }
+        } else if (Collection.class.isAssignableFrom(o.getClass())) {
+            for (Object item : (Collection) o) {
+                filterColumns(item, ignoreColumns, isMapUnderscoreToCamelCase);
+            }
+        } else if (Map.class.isAssignableFrom(o.getClass())) {
+            List<String> removeKeys = new ArrayList<>();
+            Map<String, Object> map = (Map<String, Object>) o;
+            for (String key : map.keySet()) {
+                for (String column : ignoreColumns) {
+                    if (ignoreColumns.contains(column)) {
+                        removeKeys.add(key);
+                    }
+                }
+            }
+            for (String key : removeKeys) {
+                map.remove(key);
+            }
+        } else {
+            Class clazz = o.getClass();
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                field.setAccessible(true);
+                for (String column : ignoreColumns) {
+                    boolean founded = false;
+                    String name = field.getName();
+                    if (name.equals(column)) {
+                        founded = true;
+                    } else if (isMapUnderscoreToCamelCase && name.equalsIgnoreCase(column.replace("_", ""))) {
+                        founded = true;
+                    }
+                    if (founded) {
+                        try {
+                            field.set(o, null);
+                        } catch (IllegalAccessException e) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
 }

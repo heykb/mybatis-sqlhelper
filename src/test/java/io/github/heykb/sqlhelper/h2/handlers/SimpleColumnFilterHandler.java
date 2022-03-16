@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.primary.handlers;
+package io.github.heykb.sqlhelper.h2.handlers;
 
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
 
@@ -12,7 +12,7 @@ public class SimpleColumnFilterHandler implements ColumnFilterInfoHandler {
 
     @Override
     public Collection<String> getFilterColumns() {
-        return Arrays.asList("name");
+        return Arrays.asList("name","enable");
     }
 
     @Override

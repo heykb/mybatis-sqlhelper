@@ -8,6 +8,11 @@ public class SqlHelperException extends RuntimeException {
         super(cause);
     }
 
+    public SqlHelperException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+
     public SqlHelperException(String message){
         super(message);
     }
