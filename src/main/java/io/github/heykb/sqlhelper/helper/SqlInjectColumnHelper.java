@@ -3,6 +3,7 @@ package io.github.heykb.sqlhelper.helper;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
+import com.alibaba.druid.sql.ast.SQLObject;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.*;
@@ -49,7 +50,6 @@ public class SqlInjectColumnHelper {
 
     private Configuration configuration;
 
-
     /**
      * Instantiates a new Sql inject column helper.
      *
@@ -83,117 +83,6 @@ public class SqlInjectColumnHelper {
     }
 
     /**
-     * inj前缀优先级3    没有alias优先级1  其他前缀优先级0
-     *
-     * @param selectItem
-     * @param checkAliasPrefix
-     * @return
-     */
-    int getSelectItemPriority(SQLSelectItem selectItem, boolean checkAliasPrefix) {
-        if (selectItem == null) {
-            return checkAliasPrefix ? 2 : -1;
-        }
-        String alias = null;
-        if (selectItem.getExpr() instanceof SQLPropertyExpr) {
-            SQLPropertyExpr expr = (SQLPropertyExpr) selectItem.getExpr();
-            if (expr.getOwner() instanceof SQLIdentifierExpr) {
-                alias = ((SQLIdentifierExpr) expr.getOwner()).getName();
-            }
-        }
-        return alias == null ? 1 : alias.startsWith(tbAliasPrefix) ? 3 : 0;
-    }
-
-    private void addSelectItem2Query(SQLSelectQueryBlock queryBody) {
-        addSelectItem2Query(queryBody, false);
-    }
-
-    private void addSelectItem2Query(SQLSelectQueryBlock queryBody, boolean checkAliasPrefix) {
-//        List<SQLSelectItem> sqlSelectItems = queryBody.getSelectList();
-//        SQLSelectItem addItem = null;
-//        for(SQLSelectItem sqlSelectItem:sqlSelectItems){
-//            int one = getSelectItemPriority(sqlSelectItem,checkAliasPrefix);
-//            int pre = getSelectItemPriority(addItem,checkAliasPrefix);
-//            if(one>pre){
-//                addItem = sqlSelectItem;
-//            }else if(one == pre){
-//                if(sqlSelectItem.getExpr() instanceof SQLPropertyExpr){
-//                    SQLPropertyExpr expr = (SQLPropertyExpr) sqlSelectItem.getExpr();
-//                    if("*".equals(expr.getName())){
-//                        addItem = sqlSelectItem;
-//                    }
-//                }
-//                if(sqlSelectItem.getExpr() instanceof SQLIdentifierExpr){
-//                    SQLIdentifierExpr expr = (SQLIdentifierExpr) sqlSelectItem.getExpr();
-//                    if("*".equals(expr.getName())){
-//                        addItem = sqlSelectItem;
-//                    }
-//                }
-//            }
-//        }
-//
-//        if(addItem!=null){
-//            if(addItem.getExpr() instanceof SQLPropertyExpr){
-//                SQLPropertyExpr expr = (SQLPropertyExpr) addItem.getExpr();
-//                if(!"*".equals(expr.getName())){
-//                    SQLSelectItem item= addItem.clone();
-//                    SQLPropertyExpr addExpr = (SQLPropertyExpr) item.getExpr();
-//                    addExpr.setName("tenant_id");
-//                    sqlSelectItems.add(item);
-//                }
-//            }
-//            if(addItem.getExpr() instanceof SQLIdentifierExpr){
-//                SQLIdentifierExpr expr = (SQLIdentifierExpr) addItem.getExpr();
-//                if(!"*".equals(expr.getName())){
-//                    SQLSelectItem item= addItem.clone();
-//                    SQLIdentifierExpr addExpr = (SQLIdentifierExpr) item.getExpr();
-//                    addExpr.setName("tenant_id");
-//                    sqlSelectItems.add(item);
-//                }
-//            }
-//        }
-    }
-
-    public static void main(String[] args) {
-//        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
-//        String sql = "select * from user s where s.name='333'";
-//        String sql = "select inj.xx,yy from (select inj.yy from tab t where id = 2 and name = 'wenshao') s where s.name='333'";
-//        String sql = "select u.*,g.name from user u join user_group g on u.groupId=g.groupId where u.name='123'";
-//        String sql = "select tenant_id from people where id in (select id from user s)";
-//        String sql = "update user u set ds=?, u.name=?,id='fdf' ,ddd=? where id =?";
-//        String sql = "delete from user where id = ( select id from user s )";
-//        String sql = "insert into user (id,name) values('0','heykb')";
-//        String sql = "insert into user (id,name) select g.id,g.name from user_group g where id=1";
-//        String sql = "SELECT * FROM \"a\" left JOIN (select inj.yy from tab t where id = 2 and name = 'wenshao') b on a.name = b.name";
-        String sql = "SELECT * FROM (select * from user where id = 2) s";
-        InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
-            @Override
-            public String getColumnName() {
-                return "tenant_id";
-            }
-            @Override
-            public String getValue() {
-                return "sqlhelper";
-            }
-            @Override
-            public int getInjectTypes() {
-                return INSERT;
-            }
-            @Override
-            public boolean checkCommandType(SqlCommandType commandType) {
-                return true;
-            }
-            @Override
-            public boolean checkTableName(String tableName) {
-                return true;
-            }
-        };
-        SqlInjectColumnHelper helper = new SqlInjectColumnHelper(DbType.postgresql, Arrays.asList(right));
-        helper.setConfiguration(new Configuration());
-        String re = helper.handleSql(sql, null/*Arrays.asList("id")*/, null);
-        System.out.println(re);
-    }
-
-    /**
      * 为sql语句注入字段
      *
      * @param sql the sql
@@ -202,7 +91,6 @@ public class SqlInjectColumnHelper {
     public String handleSql(String sql) {
         return handleSql(sql, null, null);
     }
-
     /**
      * 为sql语句注入字段
      * 为select语句过滤结果字段
@@ -216,8 +104,7 @@ public class SqlInjectColumnHelper {
         SqlCommandType commandType = null;
         if (sqlStatement instanceof SQLSelectStatement) {
             commandType = SqlCommandType.SELECT;
-            SQLSelectQueryBlock queryObject = (SQLSelectQueryBlock) ((SQLSelectStatement) sqlStatement).getSelect().getQuery();
-            addCondition2Query(queryObject, queryObject.getFrom(), true, commandType);
+            addCondition2Select(((SQLSelectStatement) sqlStatement).getSelect(),true, commandType);
             sqlStatement = filterColumns(sqlStatement, filterColumns);
         } else if (sqlStatement instanceof SQLUpdateStatement) {
             // 为更新语句中的查询语句添加附加条件
@@ -245,7 +132,7 @@ public class SqlInjectColumnHelper {
             SQLSelect sqlSelect = insertStatement.getQuery();
             if (sqlSelect != null) {
                 SQLSelectQueryBlock queryObject = (SQLSelectQueryBlock) sqlSelect.getQuery();
-                addCondition2Query(queryObject, queryObject.getFrom(), true, commandType);
+                addCondition2Select(sqlSelect.getQuery(),true,commandType);
             }
             addColumn2Insert(insertStatement);
         }
@@ -253,7 +140,10 @@ public class SqlInjectColumnHelper {
         return re;
     }
 
-    public SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns) {
+
+
+
+    private SQLStatement filterColumns(SQLStatement originSql, Collection<String> filterColumns) {
         final SQLStatement tmp = SQLUtils.parseSingleStatement("select * from a", dbType);
         if (CollectionUtils.isEmpty(filterColumns)) {
             return originSql;
@@ -303,8 +193,7 @@ public class SqlInjectColumnHelper {
         if (expr instanceof SQLInSubQueryExpr) {
             SQLInSubQueryExpr inWhere = (SQLInSubQueryExpr) expr;
             SQLSelect subSelectObject = inWhere.getSubQuery();
-            SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
-            addCondition2Query(subQueryObject, subQueryObject.getFrom(), false, commandType);
+            addCondition2Select(subSelectObject.getQuery(), false,commandType);
         } else if (expr instanceof SQLBinaryOpExpr) {
             SQLBinaryOpExpr opExpr = (SQLBinaryOpExpr) expr;
             SQLExpr left = opExpr.getLeft();
@@ -312,16 +201,11 @@ public class SqlInjectColumnHelper {
             addCondition2QueryInWhere(left, commandType);
             addCondition2QueryInWhere(right, commandType);
         } else if (expr instanceof SQLQueryExpr) {
-            SQLSelectQueryBlock selectQueryBlock = (SQLSelectQueryBlock) (((SQLQueryExpr) expr).getSubQuery()).getQuery();
-            addCondition2Query(selectQueryBlock, selectQueryBlock.getFrom(), false, commandType);
+            addCondition2Select(((SQLQueryExpr) expr).getSubQuery(), false,commandType);
         }
     }
 
-    void addTbPrefix2Sql(SQLStatement sqlStatement) {
-
-    }
-
-    SQLStatement toLogicDeleteSql(SQLDeleteStatement sqlStatement) {
+    private SQLStatement toLogicDeleteSql(SQLDeleteStatement sqlStatement) {
         if (logicDeleteInfoHandler == null) {
             return sqlStatement;
         }
@@ -445,16 +329,29 @@ public class SqlInjectColumnHelper {
     /**
      * 为查询语句添加附加条件（包括where中的子查询、from的子查询、以及表连接添加过滤条件）
      *
+     * @param select
+     * @param commandType
+     */
+    private void addCondition2Select(SQLObject select, boolean isFirstLevelQuery, SqlCommandType commandType) {
+        if (select instanceof SQLSelect) {
+            addCondition2Select(((SQLSelect) select).getQuery(), isFirstLevelQuery, commandType);
+        } else if (select instanceof SQLSelectQueryBlock) {
+            SQLSelectQueryBlock sqlSelectQueryBlock = (SQLSelectQueryBlock) select;
+            addCondition2Query(sqlSelectQueryBlock, sqlSelectQueryBlock.getFrom(), isFirstLevelQuery, commandType);
+        } else if (select instanceof SQLUnionQuery) {
+            SQLUnionQuery sqlUnionQuery = (SQLUnionQuery) select;
+            addCondition2Select(sqlUnionQuery.getLeft(), isFirstLevelQuery, commandType);
+            addCondition2Select(sqlUnionQuery.getRight(), isFirstLevelQuery, commandType);
+        }
+    }
+
+    /**
+     * 为单独一个查询块添加附加条件
      * @param queryBody
      * @param fromBody
      * @param isFirstLevelQuery 当前queryBody是否第一层级别的查询块
      */
     private void addCondition2Query(SQLSelectQueryBlock queryBody, SQLTableSource fromBody, boolean isFirstLevelQuery, SqlCommandType commandType) {
-        if (isFirstLevelQuery) {
-            addSelectItem2Query(queryBody);
-        } else {
-            addSelectItem2Query(queryBody, true);
-        }
         SQLExpr originCondition = queryBody.getWhere();
         if (fromBody instanceof SQLExprTableSource) {
             String tableName = SQLUtils.normalize(((SQLExprTableSource) fromBody).getTableName());
@@ -487,8 +384,15 @@ public class SqlInjectColumnHelper {
             SQLSelect subSelectObject = ((SQLSubqueryTableSource) fromBody).getSelect();
             SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
             addCondition2Query(subQueryObject, subQueryObject.getFrom(), isFirstLevelQuery, commandType);
+        } else if (fromBody instanceof SQLUnionQueryTableSource) {
+            // 支持union 查询
+            SQLUnionQueryTableSource sqlUnionQueryTableSource = (SQLUnionQueryTableSource) fromBody;
+            SQLSelectQueryBlock left = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getLeft();
+            SQLSelectQueryBlock right = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getRight();
+            addCondition2Query(left, left.getFrom(), isFirstLevelQuery, commandType);
+            addCondition2Query(right, right.getFrom(), isFirstLevelQuery, commandType);
         } else {
-            throw new SqlHelperException("未处理的异常");
+            throw new SqlHelperException("不支持的sql语句");
         }
 
     }
@@ -564,4 +468,77 @@ public class SqlInjectColumnHelper {
         }
         return re;
     }
+
+
+
+
+//    /**
+//     * inj前缀优先级3    没有alias优先级1  其他前缀优先级0
+//     *
+//     * @param selectItem
+//     * @param checkAliasPrefix
+//     * @return
+//     */
+//    int getSelectItemPriority(SQLSelectItem selectItem, boolean checkAliasPrefix) {
+//        if (selectItem == null) {
+//            return checkAliasPrefix ? 2 : -1;
+//        }
+//        String alias = null;
+//        if (selectItem.getExpr() instanceof SQLPropertyExpr) {
+//            SQLPropertyExpr expr = (SQLPropertyExpr) selectItem.getExpr();
+//            if (expr.getOwner() instanceof SQLIdentifierExpr) {
+//                alias = ((SQLIdentifierExpr) expr.getOwner()).getName();
+//            }
+//        }
+//        return alias == null ? 1 : alias.startsWith(tbAliasPrefix) ? 3 : 0;
+//    }
+//
+//private void addSelectItem2Query(SQLSelectQueryBlock queryBody) {
+//    addSelectItem2Query(queryBody, false);
+//}
+//    private void addSelectItem2Query(SQLSelectQueryBlock queryBody, boolean checkAliasPrefix) {
+////        List<SQLSelectItem> sqlSelectItems = queryBody.getSelectList();
+////        SQLSelectItem addItem = null;
+////        for(SQLSelectItem sqlSelectItem:sqlSelectItems){
+////            int one = getSelectItemPriority(sqlSelectItem,checkAliasPrefix);
+////            int pre = getSelectItemPriority(addItem,checkAliasPrefix);
+////            if(one>pre){
+////                addItem = sqlSelectItem;
+////            }else if(one == pre){
+////                if(sqlSelectItem.getExpr() instanceof SQLPropertyExpr){
+////                    SQLPropertyExpr expr = (SQLPropertyExpr) sqlSelectItem.getExpr();
+////                    if("*".equals(expr.getName())){
+////                        addItem = sqlSelectItem;
+////                    }
+////                }
+////                if(sqlSelectItem.getExpr() instanceof SQLIdentifierExpr){
+////                    SQLIdentifierExpr expr = (SQLIdentifierExpr) sqlSelectItem.getExpr();
+////                    if("*".equals(expr.getName())){
+////                        addItem = sqlSelectItem;
+////                    }
+////                }
+////            }
+////        }
+////
+////        if(addItem!=null){
+////            if(addItem.getExpr() instanceof SQLPropertyExpr){
+////                SQLPropertyExpr expr = (SQLPropertyExpr) addItem.getExpr();
+////                if(!"*".equals(expr.getName())){
+////                    SQLSelectItem item= addItem.clone();
+////                    SQLPropertyExpr addExpr = (SQLPropertyExpr) item.getExpr();
+////                    addExpr.setName("tenant_id");
+////                    sqlSelectItems.add(item);
+////                }
+////            }
+////            if(addItem.getExpr() instanceof SQLIdentifierExpr){
+////                SQLIdentifierExpr expr = (SQLIdentifierExpr) addItem.getExpr();
+////                if(!"*".equals(expr.getName())){
+////                    SQLSelectItem item= addItem.clone();
+////                    SQLIdentifierExpr addExpr = (SQLIdentifierExpr) item.getExpr();
+////                    addExpr.setName("tenant_id");
+////                    sqlSelectItems.add(item);
+////                }
+////            }
+////        }
+//    }
 }

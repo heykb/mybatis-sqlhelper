@@ -4,7 +4,7 @@
 
     <groupId>io.github.heykb</groupId>
     <artifactId>mybatis-sqlHelper</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 
     <name>MyBatis SqlHelper</name>
     <description>MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper</description>

@@ -13,7 +13,7 @@ import java.util.function.Function;
  */
 public class SqlHelperDynamicDataSourceProxy extends SimpleProxyDatasource {
     private static final Log log = LogFactory.getLog(SqlHelperDynamicDataSourceProxy.class);
-    private SqlHelperDsManager sqlHelperDsManager;
+    private DefaultSqlHelperDsManager sqlHelperDsManager;
 
     public SqlHelperDynamicDataSourceProxy(DataSource primaryDs) {
        this(primaryDs,null);
@@ -27,10 +27,10 @@ public class SqlHelperDynamicDataSourceProxy extends SimpleProxyDatasource {
      */
     public SqlHelperDynamicDataSourceProxy(DataSource primaryDs, Function<DataSource, DataSource> dsUpgradeCallback) {
         super(primaryDs);
-        this.sqlHelperDsManager = new SqlHelperDsManager(primaryDs, dsUpgradeCallback);
+        this.sqlHelperDsManager = new DefaultSqlHelperDsManager(primaryDs, dsUpgradeCallback);
     }
 
-    public SqlHelperDsManager getSqlHelperDsManager() {
+    public DefaultSqlHelperDsManager getSqlHelperDsManager() {
         return sqlHelperDsManager;
     }
 
@@ -46,7 +46,7 @@ public class SqlHelperDynamicDataSourceProxy extends SimpleProxyDatasource {
         DataSource dataSource = sqlHelperDsManager.getByDatasourceId(logicDsMeta.getDatasourceId());
         Connection connection = dataSource.getConnection();
         if (logicDsMeta.getSubspace() != null) {
-            SupportedConnectionSubspaceChange.changeNamespaceIfSupport(connection, logicDsMeta.getSubspace(),logicDsMeta.getExpectedSubspaceType());
+            SupportedConnectionSubspaceChange.changeSubspaceIfSupport(connection, logicDsMeta.getSubspace(),logicDsMeta.getExpectedSubspaceType());
         }
         return connection;
     }
@@ -62,7 +62,7 @@ public class SqlHelperDynamicDataSourceProxy extends SimpleProxyDatasource {
         DataSource dataSource = sqlHelperDsManager.getByDatasourceId(logicDsMeta.getDatasourceId());
         Connection connection = dataSource.getConnection(username, password);
         if (logicDsMeta.getSubspace() != null) {
-            SupportedConnectionSubspaceChange.changeNamespaceIfSupport(connection, logicDsMeta.getSubspace(), logicDsMeta.getExpectedSubspaceType());
+            SupportedConnectionSubspaceChange.changeSubspaceIfSupport(connection, logicDsMeta.getSubspace(), logicDsMeta.getExpectedSubspaceType());
         }
         return connection;
     }

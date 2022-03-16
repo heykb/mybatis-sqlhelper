@@ -26,7 +26,7 @@ import java.util.UUID;
 public class MultiDatasourceTests {
 
     private static SqlSessionFactory sqlSessionFactory;
-    private static SqlHelperDsManager sqlHelperDsManager;
+    private static DefaultSqlHelperDsManager sqlHelperDsManager;
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -55,7 +55,7 @@ public class MultiDatasourceTests {
 //        sqlHelperDsManager.put("sqlserver", sqlserverDs);
 
         LogicDsMeta primarySubDs = LogicDsMeta.builder()
-                .datasourceId(SqlHelperDsManager.PRIMARY_DATASOURCE_ID)
+                .datasourceId(DefaultSqlHelperDsManager.PRIMARY_DATASOURCE_ID)
                 .subspace("test")
                 .expectedSubspaceType(ConnectionSubspaceTypeEnum.SCHEMA)
                 .build();

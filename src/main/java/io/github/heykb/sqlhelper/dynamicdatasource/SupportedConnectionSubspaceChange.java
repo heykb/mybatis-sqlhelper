@@ -34,7 +34,7 @@ public class SupportedConnectionSubspaceChange {
      * @return the connection subspace type
      * @throws SQLException the sql exception
      */
-    public static ConnectionSubspaceTypeEnum changeNamespaceIfSupport(Connection connection, String subspace, ConnectionSubspaceTypeEnum expectedType) throws SQLException {
+    public static ConnectionSubspaceTypeEnum changeSubspaceIfSupport(Connection connection, String subspace, ConnectionSubspaceTypeEnum expectedType) throws SQLException {
         if (subspace == null) {
             return null;
         }

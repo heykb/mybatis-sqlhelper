@@ -33,14 +33,14 @@ public class PrimaryDatasource extends SimpleProxyDatasource {
     @Override
     public Connection getConnection() throws SQLException {
         Connection connection = super.getConnection();
-        SupportedConnectionSubspaceChange.changeNamespaceIfSupport(connection, primaryDsInitialSubspace,null);
+        SupportedConnectionSubspaceChange.changeSubspaceIfSupport(connection, primaryDsInitialSubspace,null);
         return connection;
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
         Connection connection = super.getConnection(username, password);
-        SupportedConnectionSubspaceChange.changeNamespaceIfSupport(connection, primaryDsInitialSubspace,null);
+        SupportedConnectionSubspaceChange.changeSubspaceIfSupport(connection, primaryDsInitialSubspace,null);
         return connection;
     }
 }
