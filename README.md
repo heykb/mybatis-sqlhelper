@@ -11,6 +11,7 @@
         <version>${project.version}</version>
     </dependency>
 ~~~
+### 3.0即将推出 （多数据源\表前缀\修复bug）
 ## 特点
 * 可实现多租户
 * 可实现真实删除转逻辑删除
