@@ -309,6 +309,9 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 ## 使用数据权限
 [数据权限专篇](./README_DATA_PERMISSION.md)
 
+## 使用多数据源
+[多数据源专篇](https://github.com/heykb/mybatis-sqlhelper-spring/blob/main/DYNAMIC_DATASOURCE_README.md)
+
 
 
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)
