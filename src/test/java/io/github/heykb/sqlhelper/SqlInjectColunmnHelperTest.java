@@ -25,13 +25,13 @@ public class SqlInjectColunmnHelperTest {
 //        String sql = "SELECT * FROM (select * from user where id = 2) s";
 //        String sql = "SELECT * from (SELECT * FROM a union all SELECT * FROM b)";
 //        String sql = "SELECT auth_user.* from auth_user  where auth_user.\"name\" like '%3'";
-//        String sql = "SELECT * from (SELECT * FROM a union all SELECT * FROM b)";
-//        String sql = "SELECT a,name FROM tb1 union SELECT b,name FROM tb2";
+        String sql = "SELECT important_data from (SELECT important_data FROM a union all SELECT important_data FROM b)";
+//        String sql = "SELECT important_data,a,name FROM tb1 union SELECT important_data,b,name FROM tb2";
 //        String sql = "SELECT a.name,b,c FROM table a";
 //        String sql = "SELECT created_by, dept_id, important_data, data, tenant_id, id\n" +
 //                "FROM test\n" +
 //                "LIMIT ? OFFSET ?";
-        String sql = "update test set important_data = ?,created_by=?";
+//        String sql = "update test set important_data = ?,created_by=?";
         InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
             @Override
             public String getColumnName() {
@@ -63,12 +63,12 @@ public class SqlInjectColunmnHelperTest {
 
             @Override
             public boolean checkTableName(String tableName) {
-                return "test".equals(tableName);
+                return true;
             }
         };
         SqlStatementEditor sqlStatementEditorFactory =
                 new SqlStatementEditor.Builder(sql, DbType.postgresql)
-//                        .injectColumnInfoHandlers(Arrays.asList(right))
+                        .injectColumnInfoHandlers(Arrays.asList(right))
                         .columnFilterInfoHandlers(Arrays.asList(columnFilterInfoHandler))
                         .build();
         SqlStatementEditor.Result result = sqlStatementEditorFactory.processing();

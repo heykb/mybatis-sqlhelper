@@ -97,6 +97,47 @@ SELECT created_by, dept_id, NULL AS important_data, data, tenant_id, id
 FROM test
 LIMIT ? OFFSET ? 
 ~~~
+
+#### 输入：
+~~~sql
+SELECT important_data, a, name
+FROM tb1
+UNION
+SELECT important_data, b, name
+~~~
+#### 输出：
+~~~sql
+SELECT NULL AS important_data, a, name
+FROM tb1
+UNION
+SELECT NULL AS important_data, b, name
+FROM tb2 
+~~~
+
+
+#### 输入：
+~~~sql
+SELECT important_data
+FROM (
+	SELECT important_data
+	FROM a
+	UNION ALL
+	SELECT important_data
+	FROM b
+)
+~~~
+#### 输出：
+~~~sql
+SELECT important_data
+FROM (
+	SELECT NULL AS important_data
+	FROM a
+	UNION ALL
+	SELECT NULL AS important_data
+	FROM b
+)
+~~~
+
 #### 输入：
 ~~~sql
 update test set important_data = ?,created_by=?
@@ -123,7 +164,7 @@ public class SimpleColumnFilterInfoHandler extends ColumnFilterInfoHandler {
 
    @Override
     public Set<String> getFilterColumns() {
-        return Sets.newHashSet("");
+        return Sets.newHashSet("important_data");
     }
 
     @Override

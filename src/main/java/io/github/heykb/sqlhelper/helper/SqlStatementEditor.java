@@ -235,13 +235,15 @@ public class SqlStatementEditor {
         List<SQLSelectQueryBlock> re = new ArrayList<>();
         if (query instanceof SQLSelectQueryBlock) {
             SQLSelectQueryBlock queryBlock = (SQLSelectQueryBlock) query;
-            if(queryBlock.getFrom() instanceof SQLSubqueryTableSource){
+            if (queryBlock.getFrom() instanceof SQLSubqueryTableSource) {
                 re.addAll(filterColumn2Select(((SQLSubqueryTableSource) queryBlock.getFrom()).getSelect()));
+            } else if (queryBlock.getFrom() instanceof SQLUnionQueryTableSource) {
+                SQLUnionQuery union = ((SQLUnionQueryTableSource) queryBlock.getFrom()).getUnion();
+                preVisitor(union,re);
             }else{
                 re.add(queryBlock);
             }
-        }
-        if (query instanceof SQLUnionQuery) {
+        }else if (query instanceof SQLUnionQuery) {
             SQLUnionQuery union = (SQLUnionQuery) query;
             preVisitor(union,re);
         }
