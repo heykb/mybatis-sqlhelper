@@ -1,7 +1,7 @@
 package io.github.heykb.sqlhelper.config;
 
 import com.alibaba.druid.DbType;
-import com.alibaba.druid.util.StringUtils;
+import io.github.heykb.sqlhelper.utils.CommonUtils;
 
 import javax.sql.DataSource;
 import java.net.URI;
@@ -14,7 +14,7 @@ import java.sql.SQLException;
 public class SqlHelperAutoDbType {
     public static DbType getDbType(DataSource dataSource){
         String url = getUrl(dataSource);
-        if (StringUtils.isEmpty(url)) {
+        if (CommonUtils.isEmpty(url)) {
             throw new SqlHelperException("无法自动获取jdbcUrl，请通过配置指定数据库类型!");
         }
         DbType dbType = fromJdbcUrl(url);

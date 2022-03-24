@@ -101,15 +101,6 @@ public interface InjectColumnInfoHandler {
         return true;
     }
 
-    /**
-     * 当注入类型为condition时，对是否是最外层语句的条件设置过滤规则
-     * @param isFirstLevelQuery 当前要注入的位置是否是最外层 (插入语句最外层没有条件所以它的最外层为向内查找的第一个)
-     * @return
-     */
-    default boolean checkIsFirstLevelQuery(boolean isFirstLevelQuery) {
-        return true;
-    }
-
 
     /**
      * To sql expr sql expr.

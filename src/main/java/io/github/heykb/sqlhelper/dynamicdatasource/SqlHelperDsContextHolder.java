@@ -1,12 +1,11 @@
 package io.github.heykb.sqlhelper.dynamicdatasource;
 
-import com.sun.istack.internal.Nullable;
+
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 
 import java.util.Stack;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 /**
  * The type Sql helper ds context holder.
@@ -20,7 +19,7 @@ public class SqlHelperDsContextHolder {
      *
      * @param logicName 数据源名称，null代表默认数据源
      */
-    public static void switchTo(@Nullable String logicName) {
+    public static void switchTo(String logicName) {
         Stack<String> switchStack = CONTEXTHOLDER.get();
         if(switchStack == null){
             switchStack = new Stack<>();
@@ -60,7 +59,7 @@ public class SqlHelperDsContextHolder {
         return null;
     }
 
-    public static <R> R executeOn(@Nullable String datasourceName, Callable<R> callable){
+    public static <R> R executeOn(String datasourceName, Callable<R> callable) {
         switchTo(datasourceName);
         try {
             R re = callable.call();

@@ -1,6 +1,6 @@
 package io.github.heykb.sqlhelper.handler;
 
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * The interface Column filter info handler.
@@ -13,8 +13,7 @@ public interface ColumnFilterInfoHandler {
      *
      * @return the set
      */
-    Collection<String> getFilterColumns();
-
+    Set<String> getFilterColumns();
 
 
     /**
@@ -23,5 +22,9 @@ public interface ColumnFilterInfoHandler {
      * @param mapperId the mapper id
      * @return boolean boolean
      */
-     boolean checkMapperId(String mapperId);
+    default boolean checkMapperId(String mapperId) {
+        return true;
+    }
+
+    boolean checkTableName(String tableName);
 }

@@ -87,18 +87,25 @@ public class SimpleConditionInjectInfoHandler extends ConditionInjectInfoHandler
 ### 列级别控制
 #### 输入：
 ~~~sql
-SELECT created_by, dept_id, importand_data, data, tenant_id, id
+SELECT created_by, dept_id, important_data, data, tenant_id, id
 FROM test
 LIMIT ? OFFSET ?
 ~~~
 #### 输出：
 ~~~sql
-SELECT created_by, dept_id, data, tenant_id, id  
-FROM( 
-    SELECT created_by, dept_id, importand_data, data, tenant_id, id
-    FROM test
-    LIMIT ? OFFSET ? 
-) _sql_help_ 
+SELECT created_by, dept_id, NULL AS important_data, data, tenant_id, id
+FROM test
+LIMIT ? OFFSET ? 
+~~~
+#### 输入：
+~~~sql
+update test set important_data = ?,created_by=?
+~~~
+#### 输出：
+~~~sql
+UPDATE test
+SET created_by = ?
+// 我们也会删除mybatis中的参数
 ~~~
 ### 使用方式
 配置：
@@ -114,18 +121,14 @@ sqlhelper:
 @Component
 public class SimpleColumnFilterInfoHandler extends ColumnFilterInfoHandler {
 
-    public Collection<String> getFilterColumns(){
-        return Arrays.asList("importantData");
+   @Override
+    public Set<String> getFilterColumns() {
+        return Sets.newHashSet("");
     }
-    
-    /**
-     * 设置mapperId方法级别过滤逻辑
-     *
-     * @param mapperId the mapper id
-     * @return boolean
-     */
-    public boolean checkMapperId(String mapperId){
-        return "com.zhu.mapper.ExampleMapper.pageList".equals(mapperId);
+
+    @Override
+    public boolean checkTableName(String tableName) {
+        return "test".equals(tableName);
     }
 }
 ~~~

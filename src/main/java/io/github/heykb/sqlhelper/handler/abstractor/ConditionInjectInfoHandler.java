@@ -3,10 +3,10 @@ package io.github.heykb.sqlhelper.handler.abstractor;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
-import com.alibaba.druid.util.StringUtils;
 import io.github.heykb.sqlhelper.handler.ConditionInjectInfo;
-import io.github.heykb.sqlhelper.helper.Configuration;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
+
+import java.util.Map;
 
 /**
  * The type Condition inject info handler.
@@ -22,9 +22,9 @@ public abstract class ConditionInjectInfoHandler implements ConditionInjectInfo 
     abstract public String getValue();
 
     @Override
-    public SQLExpr toConditionSQLExpr(String tableAlias, DbType dbType, Configuration configuration) {
-        String columnName = CommonUtils.adaptePropertyName(getColumnName(),configuration);
-        String aliasFieldName = StringUtils.isEmpty(tableAlias) ? columnName : tableAlias + "." + columnName;
+    public SQLExpr toConditionSQLExpr(String tableAlias, DbType dbType, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase) {
+        String columnName = CommonUtils.adaptePropertyName(getColumnName(), columnAliasMap, isMapUnderscoreToCamelCase);
+        String aliasFieldName = CommonUtils.isEmpty(tableAlias) ? columnName : tableAlias + "." + columnName;
         StringBuilder conditionSql = new StringBuilder(aliasFieldName);
         conditionSql.append(" ").append(op()).append(" ").append(getValue());
         return SQLUtils.toSQLExpr(conditionSql.toString());

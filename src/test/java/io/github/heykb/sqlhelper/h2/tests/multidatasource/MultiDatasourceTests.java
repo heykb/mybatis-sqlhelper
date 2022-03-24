@@ -11,10 +11,7 @@ import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -23,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @DisplayName("多租户测试")
+@Disabled
 public class MultiDatasourceTests {
 
     private static SqlSessionFactory sqlSessionFactory;
@@ -31,7 +29,7 @@ public class MultiDatasourceTests {
     @BeforeAll
     static void setUp() throws Exception {
         // create a SqlSessionFactory 主数据源postgre
-        try (Reader reader = Resources.getResourceAsReader("io/github/heykb/sqlhelper/primary/mybatis.xml")) {
+        try (Reader reader = Resources.getResourceAsReader("io/github/heykb/sqlhelper/h2/mybatis-multitenants.xml")) {
             sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
             Environment environment = sqlSessionFactory.getConfiguration().getEnvironment();
             SqlHelperDynamicDataSourceProxy dataSourceProxy = new SqlHelperDynamicDataSourceProxy(environment.getDataSource());

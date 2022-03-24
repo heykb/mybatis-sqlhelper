@@ -2,7 +2,8 @@ package io.github.heykb.sqlhelper.handler;
 
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.ast.SQLExpr;
-import io.github.heykb.sqlhelper.helper.Configuration;
+
+import java.util.Map;
 
 /**
  * The interface Condition inject info.
@@ -32,8 +33,7 @@ public interface ConditionInjectInfo extends InjectColumnInfoHandler{
      *
      * @param tableAlias    the table alias
      * @param dbType        the db type
-     * @param configuration the configuration
      * @return the sql expr
      */
-    SQLExpr toConditionSQLExpr(String tableAlias,DbType dbType, Configuration configuration);
+    SQLExpr toConditionSQLExpr(String tableAlias, DbType dbType, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase);
 }

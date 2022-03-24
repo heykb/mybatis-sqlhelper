@@ -1,7 +1,6 @@
 package io.github.heykb.sqlhelper.interceptor;
 
 import com.alibaba.druid.DbType;
-import com.alibaba.druid.util.StringUtils;
 import io.github.heykb.sqlhelper.config.SqlHelperAutoDbType;
 import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
@@ -10,8 +9,8 @@ import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
 import io.github.heykb.sqlhelper.handler.abstractor.TenantInfoHandler;
 import io.github.heykb.sqlhelper.handler.dynamic.DynamicFindColumnFilterHandler;
 import io.github.heykb.sqlhelper.handler.dynamic.DynamicFindInjectInfoHandler;
-import io.github.heykb.sqlhelper.helper.Configuration;
-import io.github.heykb.sqlhelper.helper.SqlInjectColumnHelper;
+import io.github.heykb.sqlhelper.helper.SqlStatementEditor;
+import io.github.heykb.sqlhelper.typeHandler.ColumnFilterTypeHandler;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
@@ -25,6 +24,7 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.TypeHandler;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -130,25 +130,25 @@ public class SqlHelperPlugin implements Interceptor {
             this.tbAliasPrefix  = properties.getProperty("tbAliasPrefix");
             // 读取InjectColumnInfoHandler
             String commaString = properties.getProperty("InjectColumnInfoHandler");
-            if(!StringUtils.isEmpty(commaString)){
+            if (!CommonUtils.isEmpty(commaString)) {
                 String[] classes = commaString.split(",");
                 this.injectColumnInfoHandlers = CommonUtils.getInstanceByClassName(classes);
             }
             // 读取DynamicFindInjectInfoHandler
             String classString = properties.getProperty("DynamicFindInjectInfoHandler");
-            if(!StringUtils.isEmpty(classString)){
+            if (!CommonUtils.isEmpty(classString)) {
                 String[] classes = new String[]{classString};
                 this.dynamicFindInjectInfoHandler = (DynamicFindInjectInfoHandler) CommonUtils.getInstanceByClassName(classes).get(0);
             }
             // 读取InjectColumnInfoHandler
             commaString = properties.getProperty("ColumnFilterInfoHandler");
-            if(!StringUtils.isEmpty(commaString)){
+            if (!CommonUtils.isEmpty(commaString)) {
                 String[] classes = commaString.split(",");
                 this.columnFilterInfoHandlers = CommonUtils.getInstanceByClassName(classes);
             }
             // 读取DynamicFindInjectInfoHandler
             classString = properties.getProperty("DynamicFindColumnFilterHandler");
-            if(!StringUtils.isEmpty(classString)){
+            if (!CommonUtils.isEmpty(classString)) {
                 String[] classes = new String[]{classString};
                 this.dynamicFindColumnFilterHandler = (DynamicFindColumnFilterHandler) CommonUtils.getInstanceByClassName(classes).get(0);
             }
@@ -261,23 +261,22 @@ public class SqlHelperPlugin implements Interceptor {
     }
 
 
-    Set<String> getFilterColumns(MappedStatement mappedStatement, Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers, DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler) {
-        Set<String> filterColumns = null;
-        String mapperId = mappedStatement.getId();
-        if (mappedStatement.getSqlCommandType() == SqlCommandType.SELECT || mappedStatement.getSqlCommandType() == SqlCommandType.UPDATE) {
-            if (columnFilterInfoHandlers != null) {
-                filterColumns = columnFilterInfoHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
-                        .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet());
-                if (dynamicFindColumnFilterHandler != null && dynamicFindColumnFilterHandler.checkMapperIds(mapperId)) {
-                    List<ColumnFilterInfoHandler> dynamicHandlers = dynamicFindColumnFilterHandler.findColumnFilterHandlers();
-                    if (!CollectionUtils.isEmpty(dynamicHandlers)) {
-                        filterColumns.addAll(dynamicHandlers.stream().filter(columnFilterInfoHandler -> columnFilterInfoHandler.checkMapperId(mapperId))
-                                .flatMap(columnFilterInfoHandler -> columnFilterInfoHandler.getFilterColumns().stream()).collect(Collectors.toSet()));
-                    }
+    List<ColumnFilterInfoHandler> getEnabledColumnFilterInfoHandler(String mapperId, Collection<ColumnFilterInfoHandler> handlers, DynamicFindColumnFilterHandler dynamicFindColumnFilterHandler) {
+        List<ColumnFilterInfoHandler> re = new ArrayList<>();
+        if (handlers != null) {
+            for (ColumnFilterInfoHandler item : handlers) {
+                if (item.checkMapperId(mapperId)) {
+                    re.add(item);
+                }
+            }
+            if (dynamicFindColumnFilterHandler != null && dynamicFindColumnFilterHandler.checkMapperIds(mapperId)) {
+                List<ColumnFilterInfoHandler> dynamicHandlers = dynamicFindColumnFilterHandler.findColumnFilterHandlers();
+                if (!CollectionUtils.isEmpty(dynamicHandlers)) {
+                    re.addAll(getEnabledColumnFilterInfoHandler(mapperId, dynamicHandlers, null));
                 }
             }
         }
-        return filterColumns;
+        return re;
 
     }
     /**
@@ -294,19 +293,33 @@ public class SqlHelperPlugin implements Interceptor {
             List<ResultMapping> resultMappings = resultMap.getPropertyResultMappings();
             resultPropertiesMap.putAll(resultMappings.stream().collect(Collectors.toMap(ResultMapping::getProperty, ResultMapping::getColumn, (v1, v2) -> v2)));
         }
-        Configuration configuration = new Configuration(resultPropertiesMap, mappedStatement.getConfiguration().isMapUnderscoreToCamelCase());
         String mapperId = mappedStatement.getId();
         //过滤InjectColumnInfoHandler
-        List<InjectColumnInfoHandler> handlers = getEnabledInjectColumnInfoHandler(mapperId, injectColumnInfoHandlers, dynamicFindInjectInfoHandler);
+        List<InjectColumnInfoHandler> handlers = getEnabledInjectColumnInfoHandler(mapperId, this.injectColumnInfoHandlers, this.dynamicFindInjectInfoHandler);
         // 获取有无查询列过滤
-        Set<String> filterColumns = getFilterColumns(mappedStatement, columnFilterInfoHandlers, dynamicFindColumnFilterHandler);
+        List<ColumnFilterInfoHandler> columnFilterInfoHandlers = getEnabledColumnFilterInfoHandler(mapperId, this.columnFilterInfoHandlers, this.dynamicFindColumnFilterHandler);
+
         // 处理sql
-        if (handlers.size() > 0 || !CollectionUtils.isEmpty(filterColumns)) {
-            SqlInjectColumnHelper sqlInjectColumnHelper = new SqlInjectColumnHelper(dbType, handlers, this.tbAliasPrefix);
-            sqlInjectColumnHelper.setConfiguration(configuration);
-            SystemMetaObject.forObject(boundSql).setValue("sql", sqlInjectColumnHelper.handleSql(boundSql.getSql(), filterColumns, boundSql.getParameterMappings()));
+        if (handlers.size() > 0 || columnFilterInfoHandlers.size() > 0) {
+            SqlStatementEditor sqlStatementEditorFactory = new SqlStatementEditor.Builder(boundSql.getSql(), dbType)
+                    .columnAliasMap(resultPropertiesMap)
+                    .isMapUnderscoreToCamelCase(mappedStatement.getConfiguration().isMapUnderscoreToCamelCase())
+                    .injectColumnInfoHandlers(handlers)
+                    .columnFilterInfoHandlers(columnFilterInfoHandlers)
+                    .build();
+            SqlStatementEditor.Result result = sqlStatementEditorFactory.processing();
+            if (result != null) {
+                if (boundSql.getParameterMappings() != null && !CollectionUtils.isEmpty(result.getRemovedParamIndex())) {
+                    for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {
+                        TypeHandler typeHandler = parameterMapping.getTypeHandler();
+                        SystemMetaObject.forObject(parameterMapping).setValue("typeHandler", new ColumnFilterTypeHandler(typeHandler, result.getRemovedParamIndex()));
+                    }
+                }
+                SystemMetaObject.forObject(boundSql).setValue("sql", result.getSql());
+                return result.getFailedFilterColumns();
+            }
         }
-        return filterColumns;
+        return null;
     }
 
     private boolean skipAble(Object o) {

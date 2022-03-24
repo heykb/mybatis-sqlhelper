@@ -2,7 +2,6 @@ package io.github.heykb.sqlhelper.utils;
 
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOperator;
 import com.google.common.base.CaseFormat;
-import io.github.heykb.sqlhelper.helper.Configuration;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.lang.reflect.Array;
@@ -30,13 +29,11 @@ public class CommonUtils {
 
     }
 
-    public static String adaptePropertyName(String originName, Configuration configuration){
+    public static String adaptePropertyName(String originName, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase) {
         String re = originName;
-        if(originName!=null && configuration!=null){
-            Map<String, String> propertiesMap = configuration.getResultPropertiesMap();
-            boolean isMapUnderscoreToCamelCase = configuration.isMapUnderscoreToCamelCase();
-            if(configuration.getResultPropertiesMap()!=null && propertiesMap.containsKey(re)){
-                re=propertiesMap.get(re);
+        if (originName != null) {
+            if (columnAliasMap != null && columnAliasMap.containsKey(re)) {
+                re = columnAliasMap.get(re);
             }else if(isMapUnderscoreToCamelCase){
                 if(Character.isUpperCase(re.charAt(0))){
                     re = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE,re);
@@ -117,4 +114,7 @@ public class CommonUtils {
     }
 
 
+    public static boolean isEmpty(String str) {
+        return (str == null || str.length() == 0);
+    }
 }

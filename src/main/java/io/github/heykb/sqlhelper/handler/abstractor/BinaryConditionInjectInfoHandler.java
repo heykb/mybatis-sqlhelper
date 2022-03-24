@@ -4,8 +4,9 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOpExpr;
 import io.github.heykb.sqlhelper.handler.ConditionInjectInfo;
-import io.github.heykb.sqlhelper.helper.Configuration;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
+
+import java.util.Map;
 
 /**
  * 复杂条件注入
@@ -35,14 +36,14 @@ public abstract class BinaryConditionInjectInfoHandler implements ConditionInjec
     }
 
     @Override
-    public SQLExpr toConditionSQLExpr(String tableAlias,DbType dbType, Configuration configuration){
+    public SQLExpr toConditionSQLExpr(String tableAlias, DbType dbType, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase) {
         SQLExpr left = null;
         SQLExpr right = null;
         if(getLeftConditionInjectInfo()!=null){
-            left = getLeftConditionInjectInfo().toConditionSQLExpr(tableAlias,dbType,configuration);
+            left = getLeftConditionInjectInfo().toConditionSQLExpr(tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
         }
         if(getRightConditionInjectInfo()!=null){
-            right = getRightConditionInjectInfo().toConditionSQLExpr(tableAlias,dbType,configuration);
+            right = getRightConditionInjectInfo().toConditionSQLExpr(tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
         }
         if(left != null && right !=null){
             return new SQLBinaryOpExpr(left, right, CommonUtils.convert(op()));

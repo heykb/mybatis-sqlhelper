@@ -24,7 +24,6 @@ import java.util.List;
 @DisplayName("pageHelper冲突测试")
 public class PageHelperConflictTests {
 
-
     static SqlSessionFactory setUp(boolean pageFirst) throws Exception {
         SqlSessionFactory sqlSessionFactory = null;
         // create a SqlSessionFactory

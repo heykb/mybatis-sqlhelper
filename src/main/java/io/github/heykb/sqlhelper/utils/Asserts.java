@@ -1,7 +1,5 @@
 package io.github.heykb.sqlhelper.utils;
 
-import com.google.common.base.Strings;
-
 public class Asserts {
     public Asserts() {
     }
