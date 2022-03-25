@@ -11,7 +11,28 @@
         <version>${project.version}</version>
     </dependency>
 ~~~
-### 3.0即将推出 （多数据源\表前缀\修复bug）
+## 使用快照版本(及时bug修复版本)
+~~~xml
+<dependency>
+    <groupId>io.github.heykb</groupId>
+    <artifactId>mybatis-sqlHelper</artifactId>
+    <version>3.0.0.SR1-SNAPSHOT</version>
+</dependency>
+
+<repositories>
+        <repository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+~~~
 ## 特点
 * 可实现多租户
 * 可实现真实删除转逻辑删除

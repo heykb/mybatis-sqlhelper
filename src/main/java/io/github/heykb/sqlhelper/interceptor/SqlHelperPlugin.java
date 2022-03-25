@@ -291,7 +291,11 @@ public class SqlHelperPlugin implements Interceptor {
         Map<String, String> resultPropertiesMap = new HashMap<>();
         for (ResultMap resultMap : resultMaps) {
             List<ResultMapping> resultMappings = resultMap.getPropertyResultMappings();
-            resultPropertiesMap.putAll(resultMappings.stream().collect(Collectors.toMap(ResultMapping::getProperty, ResultMapping::getColumn, (v1, v2) -> v2)));
+            for(ResultMapping resultMapping:resultMappings){
+                if(resultMapping.getColumn()!=null){
+                    resultPropertiesMap.put(resultMapping.getProperty(),resultMapping.getColumn());
+                }
+            }
         }
         String mapperId = mappedStatement.getId();
         //过滤InjectColumnInfoHandler
