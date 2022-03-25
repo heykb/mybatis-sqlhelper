@@ -2,7 +2,7 @@
 
 [![Maven central](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper)
 
-如果您正在使用MyBatis，并且您的项目需要<b>多租户、逻辑删除和数据权限</b>的功能建议您使用，这一定是<b>最方便的</b>方式，使用它对您的现有代码没有侵入，您不需要对现有代码进行任何修改。
+如果您正在使用MyBatis，并且您的项目需要<b>多租户、逻辑删除和数据权限、多数据源</b>的功能建议您使用，这一定是<b>最方便的</b>方式，使用它对您的现有代码没有侵入，您不需要对现有代码进行任何修改。
 
 ~~~xml
     <dependency>
@@ -49,7 +49,8 @@
 1. [MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)
 2. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
 3. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
-
+   
+## 建议直接使用spring-boot版本[MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
 
 ## 在mybatis.xml中配置插件
 ~~~xml
