@@ -451,7 +451,7 @@ public class SqlStatementEditor {
                 int index = -1;
                 for (int i = 0; i < items.size(); i++) {
                     SQLUpdateSetItem item = items.get(i);
-                    if (item.columnMatch(columnName)) {
+                    if (nameEquals(item.getColumn(),columnName)) {
                         index = i;
                         break;
                     }
@@ -599,7 +599,7 @@ public class SqlStatementEditor {
         if (column instanceof SQLIdentifierExpr) {
             return ((SQLIdentifierExpr) column).nameEquals(columnName);
         } else if (column instanceof SQLPropertyExpr) {
-            ((SQLPropertyExpr) column).nameEquals(columnName);
+            return ((SQLPropertyExpr) column).nameEquals(columnName);
         }
         return false;
     }

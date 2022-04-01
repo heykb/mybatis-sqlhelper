@@ -4,6 +4,7 @@ import io.github.heykb.sqlhelper.BaseDataUtils;
 import io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDynamicDataSourceProxy;
 import io.github.heykb.sqlhelper.h2.dao.PeopleMapper;
 import io.github.heykb.sqlhelper.h2.domain.People;
+import io.github.heykb.sqlhelper.h2.handlers.UpdateByInjectColumnHandler;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.SqlSession;
@@ -33,7 +34,9 @@ public class InjectTests {
     void insertTest(){
         try (SqlSession sqlSession = sqlSessionFactory.openSession();) {
             PeopleMapper demoMapper = sqlSession.getMapper(PeopleMapper.class);
-            demoMapper.insert(People.builder().id("0").name("tom").age(10).updatedBy("888").build());
+            demoMapper.insert(People.builder().id("c_4").name("tom").age(10).updatedBy("888").build());
+            People people1 = demoMapper.select("c_4");
+            Assertions.assertTrue(UpdateByInjectColumnHandler.value.equals(people1.getUpdatedBy()));
         }
     }
 
@@ -41,7 +44,9 @@ public class InjectTests {
     void updateTest(){
         try (SqlSession sqlSession = sqlSessionFactory.openSession();) {
             PeopleMapper demoMapper = sqlSession.getMapper(PeopleMapper.class);
-            demoMapper.update(People.builder().id("0").name("tom").updatedBy("888").age(10).build());
+            demoMapper.update(People.builder().id("1").name("tom").updatedBy("888").age(10).build());
+            People people1 = demoMapper.select("1");
+            Assertions.assertTrue(UpdateByInjectColumnHandler.value.equals(people1.getUpdatedBy()));
         }
     }
 
@@ -50,9 +55,13 @@ public class InjectTests {
         try (SqlSession sqlSession = sqlSessionFactory.openSession();) {
             PeopleMapper demoMapper = sqlSession.getMapper(PeopleMapper.class);
             List<People> people = new ArrayList<>();
-            people.add(People.builder().id("5").name("tom").updatedBy("888").age(10).build());
-            people.add(People.builder().id("6").name("ccc").age(10).build());
+            people.add(People.builder().id("c_5").name("tom").updatedBy("888").age(10).build());
+            people.add(People.builder().id("c_6").name("ccc").age(10).build());
             demoMapper.batchInsert(people);
+            People people1 = demoMapper.select("c_5");
+            Assertions.assertTrue(UpdateByInjectColumnHandler.value.equals(people1.getUpdatedBy()));
+            people1 = demoMapper.select("c_6");
+            Assertions.assertTrue(UpdateByInjectColumnHandler.value.equals(people1.getUpdatedBy()));
         }
     }
 }

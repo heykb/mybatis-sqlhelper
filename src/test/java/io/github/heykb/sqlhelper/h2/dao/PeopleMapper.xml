@@ -44,15 +44,15 @@
     </delete>
 
     <update id="update" parameterType="io.github.heykb.sqlhelper.h2.domain.People">
-        UPDATE people
+        UPDATE people p
         <set>
-                <if test ='null != name'>name = #{name},</if>
-                <if test ='null != age'>age = #{age},</if>
-                <if test ='null != email'>email = #{email},</if>
-                <if test ='null != deptId'>dept_id = #{deptId},</if>
-                <if test ='null != updatedBy'>updated_by = #{updatedBy},</if>
+                <if test ='null != name'>p.name = #{name},</if>
+                <if test ='null != age'>p.age = #{age},</if>
+                <if test ='null != email'>p.email = #{email},</if>
+                <if test ='null != deptId'>p.dept_id = #{deptId},</if>
+                <if test ='null != updatedBy'>p.updated_by = #{updatedBy},</if>
         </set>
-        WHERE id = #{id}
+        WHERE p.id = #{id}
     </update>
 
 

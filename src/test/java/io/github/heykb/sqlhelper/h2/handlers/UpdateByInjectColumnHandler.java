@@ -3,6 +3,7 @@ package io.github.heykb.sqlhelper.h2.handlers;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 
 public class UpdateByInjectColumnHandler implements InjectColumnInfoHandler {
+    public static final String value = "zrc";
     @Override
     public String getColumnName() {
         return "updated_by";
@@ -10,7 +11,7 @@ public class UpdateByInjectColumnHandler implements InjectColumnInfoHandler {
 
     @Override
     public String getValue() {
-        return "'zrc'";
+        return "'"+value+"'";
     }
 
     @Override
