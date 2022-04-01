@@ -6,10 +6,8 @@
   <properties resource="io/github/heykb/sqlhelper/primary/db.properties" />
   <plugins>
     <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
-      <property name="enable" value="true"/>
-      <property name="multi-tenant.enable" value="true"/>
       <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.primary.handlers.SimpleTenantInfoHandler"/>
+                value="io.github.heykb.sqlhelper.h2.handlers.UpdateByInjectColumnHandler"/>
     </plugin>
   </plugins>
   <environments default="development">
@@ -24,6 +22,6 @@
     </environment>
   </environments>
   <mappers>
-    <mapper resource="io/github/heykb/sqlhelper/primary/PeopleMapper.xml"/>
+    <package name="io.github.heykb.sqlhelper.h2.dao"/>
   </mappers>
 </configuration>

@@ -7,6 +7,17 @@ import com.alibaba.druid.sql.ast.SQLObject;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.expr.*;
 import com.alibaba.druid.sql.ast.statement.*;
+import com.alibaba.druid.sql.dialect.antspark.visitor.AntsparkSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.db2.visitor.DB2SchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.h2.visitor.H2SchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.hive.visitor.HiveSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitor;
+import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.odps.visitor.OdpsSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.oracle.visitor.OracleSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.phoenix.visitor.PhoenixSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.postgresql.visitor.PGSchemaStatVisitor;
+import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerSchemaStatVisitor;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import io.github.heykb.sqlhelper.config.SqlHelperException;
@@ -25,11 +36,12 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.alibaba.druid.DbType.db2;
+import static com.alibaba.druid.DbType.postgresql;
 import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.*;
 
 public class SqlStatementEditor {
     private static final Log log = LogFactory.getLog(SqlStatementEditor.class);
-    public static final String SUB_QUERY_ALIAS = "_sql_help_";
     private DbType dbType;
     private SQLStatement sqlStatement;
     private Map<String, String> columnAliasMap;
@@ -37,10 +49,10 @@ public class SqlStatementEditor {
     private Collection<InjectColumnInfoHandler> injectColumnInfoHandlers;
     private Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers;
     private List<LogicDeleteInfoHandler> logicDeleteInfoHandlers = new ArrayList<>();
-    private MySchemaStatVisitor schemaStatVisitor = new MySchemaStatVisitor();
+
+    private SchemaStatVisitor schemaStatVisitor;
     private Set<String> tableNames = new HashSet<>();
     private Map<String,Set<String>> tableName2needFilterColumns = new HashMap<>();
-    private BoundSql boundSql;
     private SqlStatementEditor() {
     }
 
@@ -654,11 +666,6 @@ public class SqlStatementEditor {
             return this;
         }
 
-        public SqlStatementEditor.Builder boundSql(BoundSql boundSql) {
-            this.sqlStatementEditorFactory.boundSql = boundSql;
-            return this;
-        }
-
         public SqlStatementEditor build() {
             try {
                 this.sqlStatementEditorFactory.sqlStatement = SQLUtils.parseSingleStatement(sql, this.sqlStatementEditorFactory.dbType);
@@ -675,10 +682,27 @@ public class SqlStatementEditor {
             }else{
                 this.sqlStatementEditorFactory.injectColumnInfoHandlers = new ArrayList<>();
             }
+            this.sqlStatementEditorFactory.schemaStatVisitor = getSchemaStatVisitor(this.sqlStatementEditorFactory.dbType);
             return this.sqlStatementEditorFactory;
         }
 
     }
 
+
+    static SchemaStatVisitor getSchemaStatVisitor(DbType dbType){
+        switch (dbType){
+            case postgresql:return new PGSchemaStatVisitor();
+            case mysql:return new MySqlSchemaStatVisitor();
+            case oracle:return new OracleSchemaStatVisitor();
+            case db2:return new DB2SchemaStatVisitor();
+            case hive:return new HiveSchemaStatVisitor();
+            case sqlserver:return new SQLServerSchemaStatVisitor();
+            case h2:return new H2SchemaStatVisitor();
+            case odps:return new OdpsSchemaStatVisitor();
+            case phoenix:return new PhoenixSchemaStatVisitor();
+            case antspark:return new AntsparkSchemaStatVisitor();
+        }
+        return new SchemaStatVisitor(dbType);
+    }
 
 }
