@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
+import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.SqlCommandType;
 
 import java.util.*;
@@ -39,53 +40,65 @@ public class SqlStatementEditor {
     private MySchemaStatVisitor schemaStatVisitor = new MySchemaStatVisitor();
     private Set<String> tableNames = new HashSet<>();
     private Map<String,Set<String>> tableName2needFilterColumns = new HashMap<>();
+    private BoundSql boundSql;
     private SqlStatementEditor() {
     }
 
-    public static class Builder {
-        private SqlStatementEditor sqlStatementEditorFactory;
-        private String sql;
-
-        public Builder(String sql, DbType dbType) {
-            this.sqlStatementEditorFactory = new SqlStatementEditor();
-            this.sql = sql;
-            this.sqlStatementEditorFactory.dbType = dbType;
-        }
-
-        public SqlStatementEditor.Builder injectColumnInfoHandlers(Collection<InjectColumnInfoHandler> injectColumnInfoHandlers) {
-            this.sqlStatementEditorFactory.injectColumnInfoHandlers = injectColumnInfoHandlers;
-            return this;
-        }
-
-        public SqlStatementEditor.Builder columnFilterInfoHandlers(Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers) {
-            this.sqlStatementEditorFactory.columnFilterInfoHandlers = columnFilterInfoHandlers;
-            return this;
-        }
-
-        public SqlStatementEditor.Builder columnAliasMap(Map<String, String> columnAliasMap) {
-            this.sqlStatementEditorFactory.columnAliasMap = columnAliasMap;
-            return this;
-        }
-
-        public SqlStatementEditor.Builder isMapUnderscoreToCamelCase(boolean isMapUnderscoreToCamelCase) {
-            this.sqlStatementEditorFactory.isMapUnderscoreToCamelCase = isMapUnderscoreToCamelCase;
-            return this;
-        }
-
-        public SqlStatementEditor build() {
-            this.sqlStatementEditorFactory.sqlStatement = SQLUtils.parseSingleStatement(sql, this.sqlStatementEditorFactory.dbType);
-            if(this.sqlStatementEditorFactory.injectColumnInfoHandlers!=null){
-                for(InjectColumnInfoHandler item:this.sqlStatementEditorFactory.injectColumnInfoHandlers){
-                    if(item instanceof LogicDeleteInfoHandler){
-                        this.sqlStatementEditorFactory.logicDeleteInfoHandlers.add((LogicDeleteInfoHandler) item);
-                    }
-                }
-            }else{
-                this.sqlStatementEditorFactory.injectColumnInfoHandlers = new ArrayList<>();
+    void preFilterByTableNames(Class clazz) {
+        if(tableNames.size()==0){
+            for (TableStat.Name name : schemaStatVisitor.getTables().keySet()) {
+                tableNames.add(name.getName());
             }
-            return this.sqlStatementEditorFactory;
         }
-
+        if (clazz.isAssignableFrom(LogicDeleteInfoHandler.class)) {
+            if (logicDeleteInfoHandlers != null) {
+                logicDeleteInfoHandlers = logicDeleteInfoHandlers.stream().filter(item -> {
+                    for (String normalizedTableName : tableNames) {
+                        if (item.checkTableName(normalizedTableName)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+            }
+            return;
+        }
+        if (clazz.isAssignableFrom(ColumnFilterInfoHandler.class)) {
+            if (columnFilterInfoHandlers != null) {
+                columnFilterInfoHandlers = columnFilterInfoHandlers.stream().filter(item -> {
+                    boolean re = false;
+                    for (String normalizedTableName : tableNames) {
+                        if (item.checkTableName(normalizedTableName)) {
+                            Set<String> needFilterColumns = tableName2needFilterColumns.get(normalizedTableName);
+                            if(needFilterColumns == null){
+                                needFilterColumns = new HashSet<>();
+                                tableName2needFilterColumns.put(normalizedTableName, needFilterColumns);
+                            }
+                            for(String filterColumn:item.getFilterColumns()){
+                                needFilterColumns.add(filterColumn);
+                                needFilterColumns.add(CommonUtils.adaptePropertyName(filterColumn,columnAliasMap,isMapUnderscoreToCamelCase));
+                            }
+                            re = true;
+                        }
+                    }
+                    return re;
+                }).collect(Collectors.toList());
+            }
+            return;
+        }
+        if (clazz.isAssignableFrom(InjectColumnInfoHandler.class)) {
+            if (injectColumnInfoHandlers != null) {
+                injectColumnInfoHandlers = injectColumnInfoHandlers.stream().filter(item -> {
+                    for (String normalizedTableName : tableNames) {
+                        if (item.checkTableName(normalizedTableName)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }).collect(Collectors.toList());
+            }
+            return;
+        }
     }
 
     @Data
@@ -103,85 +116,50 @@ public class SqlStatementEditor {
 
     }
 
-    void preFilterByTableNames(Class clazz) {
-        if(tableNames.size()==0){
-            for (TableStat.Name name : schemaStatVisitor.getTables().keySet()) {
-                tableNames.add(name.getName());
-            }
-        }
-        if (clazz.isAssignableFrom(LogicDeleteInfoHandler.class)) {
-            if (logicDeleteInfoHandlers != null) {
-                logicDeleteInfoHandlers = logicDeleteInfoHandlers.stream().filter(item -> {
-                    for (String name : tableNames) {
-                        if (item.checkTableName(name)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }).collect(Collectors.toList());
-            }
-            return;
-        }
-        if (clazz.isAssignableFrom(ColumnFilterInfoHandler.class)) {
-            if (columnFilterInfoHandlers != null) {
-                columnFilterInfoHandlers = columnFilterInfoHandlers.stream().filter(item -> {
-                    boolean re = false;
-                    for (String name : tableNames) {
-                        if (item.checkTableName(name)) {
-                            Set<String> needFilterColumns = tableName2needFilterColumns.get(name);
-                            if(needFilterColumns == null){
-                                needFilterColumns = new HashSet<>();
-                                tableName2needFilterColumns.put(name,needFilterColumns);
-                            }
-                            for(String filterColumn:item.getFilterColumns()){
-                                needFilterColumns.add(filterColumn);
-                                needFilterColumns.add(CommonUtils.adaptePropertyName(filterColumn,columnAliasMap,isMapUnderscoreToCamelCase));
-                            }
-                            re = true;
-                        }
-                    }
-                    return re;
-                }).collect(Collectors.toList());
-            }
-            return;
-        }
-        if (clazz.isAssignableFrom(InjectColumnInfoHandler.class)) {
-            if (injectColumnInfoHandlers != null) {
-                injectColumnInfoHandlers = injectColumnInfoHandlers.stream().filter(item -> {
-                    for (String name : tableNames) {
-                        if (item.checkTableName(name)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }).collect(Collectors.toList());
-            }
-            return;
-        }
-    }
-
     public Result processing() {
         if (sqlStatement instanceof SQLSelectStatement) {
             sqlStatement.accept(schemaStatVisitor);
             preFilterByTableNames(InjectColumnInfoHandler.class);
             preFilterByTableNames(ColumnFilterInfoHandler.class);
+            if (tableNames.size() == 0) {
+                return null;
+            }
             return processing((SQLSelectStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLUpdateStatement) {
             sqlStatement.accept(schemaStatVisitor);
             preFilterByTableNames(InjectColumnInfoHandler.class);
             preFilterByTableNames(ColumnFilterInfoHandler.class);
+            if (tableNames.size() == 0) {
+                return null;
+            }
             return processing((SQLUpdateStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLDeleteStatement) {
             sqlStatement.accept(schemaStatVisitor);
             preFilterByTableNames(InjectColumnInfoHandler.class);
             preFilterByTableNames(LogicDeleteInfoHandler.class);
+            if (tableNames.size() == 0) {
+                return null;
+            }
             return processing((SQLDeleteStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLInsertStatement) {
             sqlStatement.accept(schemaStatVisitor);
             preFilterByTableNames(InjectColumnInfoHandler.class);
+            if (tableNames.size() == 0) {
+                return null;
+            }
             return processing((SQLInsertStatement) sqlStatement);
         }
         return null;
+    }
+
+    Result processing(SQLInsertStatement insertStatement) {
+        // 为插入语句中的查询语句添加附加条件
+        SQLSelect sqlSelect = insertStatement.getQuery();
+        if (sqlSelect != null) {
+            addCondition2Select(sqlSelect.getQuery(), SqlCommandType.INSERT);
+        }
+        List<Integer> removeIndex = addColumn2Insert(insertStatement);
+        return new Result(SQLUtils.toSQLString(insertStatement), removeIndex);
     }
 
 
@@ -196,38 +174,51 @@ public class SqlStatementEditor {
         return result;
     }
 
-    Result processing(SQLInsertStatement insertStatement) {
-        // 为插入语句中的查询语句添加附加条件
-        SQLSelect sqlSelect = insertStatement.getQuery();
-        if (sqlSelect != null) {
-            addCondition2Select(sqlSelect.getQuery(), SqlCommandType.INSERT);
-        }
-        addColumn2Insert(insertStatement);
-        return new Result(SQLUtils.toSQLString(insertStatement), null);
-    }
-
     Result processing(SQLDeleteStatement deleteStatement) {
         // 为删除语句中的查询语句添加附加条件
         SQLExpr where = deleteStatement.getWhere();
         addCondition2QueryInWhere(where, SqlCommandType.DELETE);
-        SQLExpr newCondition = newEqualityCondition(SQLUtils.normalize(deleteStatement.getTableName().getSimpleName()),
+        SQLExpr newCondition = newEqualityCondition(deleteStatement.getTableName().getSimpleName(),
                 deleteStatement.getTableSource().getAlias(), where, SqlCommandType.DELETE);
         deleteStatement.setWhere(newCondition);
         SQLStatement sqlStatement = toLogicDeleteSql(deleteStatement);
         return new Result(SQLUtils.toSQLString(sqlStatement), null);
     }
 
-
     Result processing(SQLUpdateStatement updateStatement) {
         // 为where中的查询语句添加附加条件
         SQLExpr where = updateStatement.getWhere();
         addCondition2QueryInWhere(where, SqlCommandType.UPDATE);
-        SQLExpr newCondition = newEqualityCondition(SQLUtils.normalize(updateStatement.getTableName().getSimpleName()), updateStatement.getTableSource().getAlias(), where, SqlCommandType.UPDATE);
+        SQLExpr newCondition = newEqualityCondition(updateStatement.getTableName().getSimpleName(), updateStatement.getTableSource().getAlias(), where, SqlCommandType.UPDATE);
         updateStatement.setWhere(newCondition);
 
-        addColumn2Update(updateStatement);
-        List<Integer> removedParamIndex = filterColumn2Update(updateStatement);
+        List<Integer> removedParamIndex = addColumn2Update(updateStatement);
+        removedParamIndex.addAll(filterColumn2Update(updateStatement));
         return new Result(SQLUtils.toSQLString(updateStatement), removedParamIndex);
+    }
+
+    private SQLStatement toLogicDeleteSql(SQLDeleteStatement deleteStatement) {
+        String normalizedTableName = SQLUtils.normalize(deleteStatement.getTableName().getSimpleName());
+        LogicDeleteInfoHandler useLogicDeleteInfoHandle = null;
+        for (LogicDeleteInfoHandler logicDeleteInfoHandler : logicDeleteInfoHandlers) {
+            if (logicDeleteInfoHandler.checkTableName(normalizedTableName)) {
+                useLogicDeleteInfoHandle = logicDeleteInfoHandler;
+                break;
+            }
+        }
+        if (useLogicDeleteInfoHandle == null) {
+            return deleteStatement;
+        }
+        SQLStatement logicSqlStatement = SQLUtils.parseSingleStatement(useLogicDeleteInfoHandle.getDeleteSqlDemo(), dbType);
+        if (logicSqlStatement instanceof SQLUpdateStatement) {
+            log.warn(String.format("表%s转逻辑删除", normalizedTableName));
+            SQLUpdateStatement updateStatement = (SQLUpdateStatement) logicSqlStatement;
+            updateStatement.setTableSource(deleteStatement.getTableSource());
+            updateStatement.setWhere(deleteStatement.getWhere());
+        } else {
+            throw new SqlHelperException("逻辑删除sqlDemo配置错误，应该是update语句如：update xx set isDelete = false where id = xx");
+        }
+        return logicSqlStatement;
     }
 
     List<SQLSelectQueryBlock> filterColumn2Select(SQLSelect sqlSelect){
@@ -352,100 +343,92 @@ public class SqlStatementEditor {
         }
     }
 
-    private SQLStatement toLogicDeleteSql(SQLDeleteStatement deleteStatement) {
-        String tableName = SQLUtils.normalize(deleteStatement.getTableName().getSimpleName());
-        LogicDeleteInfoHandler useLogicDeleteInfoHandle = null;
-        for (LogicDeleteInfoHandler logicDeleteInfoHandler : logicDeleteInfoHandlers) {
-            if (logicDeleteInfoHandler.checkTableName(tableName)) {
-                useLogicDeleteInfoHandle = logicDeleteInfoHandler;
-                break;
-            }
-        }
-        if (useLogicDeleteInfoHandle == null) {
-            return deleteStatement;
-        }
-        SQLStatement logicSqlStatement = SQLUtils.parseSingleStatement(useLogicDeleteInfoHandle.getDeleteSqlDemo(), dbType);
-        if (logicSqlStatement instanceof SQLUpdateStatement) {
-            log.warn(String.format("表%s转逻辑删除", tableName));
-            SQLUpdateStatement updateStatement = (SQLUpdateStatement) logicSqlStatement;
-            updateStatement.setTableSource(deleteStatement.getTableSource());
-            updateStatement.setWhere(deleteStatement.getWhere());
-        } else {
-            throw new SqlHelperException("逻辑删除sqlDemo配置错误，应该是update语句如：update xx set isDelete = false where id = xx");
-        }
-        return logicSqlStatement;
-    }
-
     /**
      * 为insert语句添加字段
      */
-    private void addColumn2Insert(SQLInsertStatement insertStatement) {
+    private List<Integer> addColumn2Insert(SQLInsertStatement insertStatement) {
+        List<Integer> removeIndex = new ArrayList<>();
         List<SQLExpr> columns = insertStatement.getColumns();
         List<SQLInsertStatement.ValuesClause> valuesClauses = insertStatement.getValuesList();
-        String tableName = SQLUtils.normalize(insertStatement.getTableName().getSimpleName());
+        String normalizedTableName = SQLUtils.normalize(insertStatement.getTableName().getSimpleName());
         for (InjectColumnInfoHandler infoHandler : injectColumnInfoHandlers) {
             if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.INSERT) > 0) {
-                if (!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(SqlCommandType.INSERT)) {
+                if (!infoHandler.checkTableName(normalizedTableName) || !infoHandler.checkCommandType(SqlCommandType.INSERT)) {
                     continue;
                 }
                 int index = -1;
                 String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
-                // 跳过
-                if (infoHandler.isExistSkip()) {
-                    for (int i = 0; i < columns.size(); i++) {
-                        if (nameEquals(columns.get(i), columnName)) {
-                            index = i;
-                            break;
+                for (int i = 0; i < columns.size(); i++) {
+                    if (nameEquals(columns.get(i), columnName)) {
+                        index = i;
+                        break;
+                    }
+                }
+                // 没找到
+                if (index == -1) {
+                    log.warn(String.format("表%s添加插入项:%s = %s", normalizedTableName, columnName, infoHandler.getValue()));
+                    columns.add(new SQLIdentifierExpr(columnName));
+                } else if (infoHandler.isExistOverride()) {
+                    log.warn(String.format("表%s覆盖插入项:%s = %s", normalizedTableName, columnName, infoHandler.getValue()));
+                }
+                SQLExpr injectValue = infoHandler.toSQLExpr(dbType);
+                for (SQLInsertStatement.ValuesClause values : valuesClauses) {
+                    if (index == -1) {
+                        values.addValue(injectValue);
+                    } else {
+                        if (infoHandler.isExistOverride()) {
+                            for (int j = 0; j < values.getValues().size(); ++j) {
+                                SQLExpr sqlExpr = values.getValues().get(j);
+                                if (j == index) {
+                                    values.getValues().set(j, injectValue);
+                                    if (sqlExpr instanceof SQLVariantRefExpr) {
+                                        removeIndex.add(((SQLVariantRefExpr) sqlExpr).getIndex() + 1);
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-                // 不跳过或者没找到
-                if (!infoHandler.isExistSkip() || index == -1) {
-                    log.warn(String.format("表%s新增插入项:%s = %s", tableName, columnName, infoHandler.getValue()));
-                    columns.add(new SQLIdentifierExpr(columnName));
 
-                }
-                for (SQLInsertStatement.ValuesClause values : valuesClauses) {
-                    // 不跳过或者没找到
-                    if (!infoHandler.isExistSkip() || index == -1) {
-                        values.addValue(infoHandler.toSQLExpr(dbType));
-                    }
                 }
             }
         }
+        return removeIndex;
     }
 
     private List<Integer> filterColumn2Update(SQLUpdateStatement sqlStatement) {
+        List<Integer> removeIndex = new ArrayList<>();
         List<SQLUpdateSetItem> items = sqlStatement.getItems();
-        String tableName = SQLUtils.normalize(sqlStatement.getTableName().getSimpleName());
+        String normalizedTableName = SQLUtils.normalize(sqlStatement.getTableName().getSimpleName());
         Set<String> filterFields = new HashSet<>();
         for (ColumnFilterInfoHandler columnFilterInfoHandler : columnFilterInfoHandlers) {
-            if (columnFilterInfoHandler.checkTableName(tableName) && columnFilterInfoHandler.getFilterColumns() != null) {
+            if (columnFilterInfoHandler.checkTableName(normalizedTableName) && columnFilterInfoHandler.getFilterColumns() != null) {
                 for (String filterColumn : columnFilterInfoHandler.getFilterColumns()) {
                     filterFields.add(CommonUtils.adaptePropertyName(filterColumn, this.columnAliasMap, this.isMapUnderscoreToCamelCase));
                 }
             }
         }
-        log.warn("从更新语句中删除列：" + String.join(",", filterFields));
-        List<SQLUpdateSetItem> needRemove = new ArrayList<>();
-        List<Integer> removeIndex = new ArrayList<>();
-        for (SQLUpdateSetItem item : items) {
-            SQLExpr expr = item.getColumn();
-            String name = item.toString();
-            if (expr instanceof SQLPropertyExpr) {
-                name = SQLUtils.normalize(((SQLPropertyExpr) expr).getName());
-            } else if (expr instanceof SQLIdentifierExpr) {
-                name = SQLUtils.normalize(((SQLIdentifierExpr) expr).getName());
-            }
-            if (filterFields.contains(name)) {
-                needRemove.add(item);
-                if (item.getValue() instanceof SQLVariantRefExpr) {
-                    removeIndex.add(((SQLVariantRefExpr) item.getValue()).getIndex() + 1);
-                }
-            }
+        if (filterFields.size() > 0) {
+            log.warn("从更新语句中删除列：" + String.join(",", filterFields));
+            List<SQLUpdateSetItem> needRemove = new ArrayList<>();
 
+            for (SQLUpdateSetItem item : items) {
+                SQLExpr expr = item.getColumn();
+                String name = item.toString();
+                if (expr instanceof SQLPropertyExpr) {
+                    name = SQLUtils.normalize(((SQLPropertyExpr) expr).getName());
+                } else if (expr instanceof SQLIdentifierExpr) {
+                    name = SQLUtils.normalize(((SQLIdentifierExpr) expr).getName());
+                }
+                if (filterFields.contains(name)) {
+                    needRemove.add(item);
+                    if (item.getValue() instanceof SQLVariantRefExpr) {
+                        removeIndex.add(((SQLVariantRefExpr) item.getValue()).getIndex() + 1);
+                    }
+                }
+
+            }
+            needRemove.forEach(item -> items.remove(item));
         }
-        needRemove.forEach(item -> items.remove(item));
         return removeIndex;
     }
 
@@ -454,30 +437,43 @@ public class SqlStatementEditor {
      *
      * @param sqlStatement
      */
-    private void addColumn2Update(SQLUpdateStatement sqlStatement) {
+    private List<Integer> addColumn2Update(SQLUpdateStatement sqlStatement) {
+        List<Integer> removeIndex = new ArrayList<>();
         List<SQLUpdateSetItem> items = sqlStatement.getItems();
-        String tableName = SQLUtils.normalize(sqlStatement.getTableName().getSimpleName());
+        String normalizedTableName = SQLUtils.normalize(sqlStatement.getTableName().getSimpleName());
+        List<SQLUpdateSetItem> addSetItem = new ArrayList<>();
         for (InjectColumnInfoHandler infoHandler : injectColumnInfoHandlers) {
             if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.UPDATE) > 0) {
-                if (!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(SqlCommandType.UPDATE)) {
+                if (!infoHandler.checkTableName(normalizedTableName) || !infoHandler.checkCommandType(SqlCommandType.UPDATE)) {
                     continue;
                 }
                 String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
-                // 跳过
-                if (infoHandler.isExistSkip()) {
-                    for (SQLUpdateSetItem item : items) {
-                        if (item.columnMatch(columnName)) {
-                            continue;
-                        }
+                int index = -1;
+                for (int i = 0; i < items.size(); i++) {
+                    SQLUpdateSetItem item = items.get(i);
+                    if (item.columnMatch(columnName)) {
+                        index = i;
+                        break;
                     }
                 }
-                SQLUpdateSetItem sqlUpdateSetItem = new SQLUpdateSetItem();
-                log.warn(String.format("新增更新列：%s = %s", columnName, infoHandler.getValue()));
-                sqlUpdateSetItem.setColumn(new SQLIdentifierExpr(columnName));
-                sqlUpdateSetItem.setValue(infoHandler.toSQLExpr(dbType));
-                items.add(sqlUpdateSetItem);
+                if (index == -1) {
+                    SQLUpdateSetItem sqlUpdateSetItem = new SQLUpdateSetItem();
+                    log.warn(String.format("新增更新列：%s = %s", columnName, infoHandler.getValue()));
+                    sqlUpdateSetItem.setColumn(new SQLIdentifierExpr(columnName));
+                    sqlUpdateSetItem.setValue(infoHandler.toSQLExpr(dbType));
+                    addSetItem.add(sqlUpdateSetItem);
+                } else if (infoHandler.isExistOverride()) {
+                    SQLExpr sqlExpr = items.get(index).getValue();
+                    log.warn(String.format("覆盖更新列：%s = %s", columnName, infoHandler.getValue()));
+                    items.get(index).setValue(infoHandler.toSQLExpr(dbType));
+                    if (sqlExpr instanceof SQLVariantRefExpr) {
+                        removeIndex.add(((SQLVariantRefExpr) sqlExpr).getIndex() + 1);
+                    }
+                }
             }
         }
+        items.addAll(addSetItem);
+        return removeIndex;
     }
 
     /**
@@ -487,6 +483,9 @@ public class SqlStatementEditor {
      * @param commandType
      */
     private void addCondition2Select(SQLObject select, SqlCommandType commandType) {
+        if (select == null) {
+            return;
+        }
         if (select instanceof SQLSelect) {
             addCondition2Select(((SQLSelect) select).getQuery(), commandType);
         } else if (select instanceof SQLSelectQueryBlock) {
@@ -499,7 +498,6 @@ public class SqlStatementEditor {
         }
     }
 
-
     /**
      * 为单独一个查询块添加附加条件
      *
@@ -507,9 +505,12 @@ public class SqlStatementEditor {
      * @param fromBody
      */
     private void addCondition2Query(SQLSelectQueryBlock queryBody, SQLTableSource fromBody, SqlCommandType commandType) {
+        if (queryBody == null || fromBody == null) {
+            return;
+        }
         SQLExpr originCondition = queryBody.getWhere();
         if (fromBody instanceof SQLExprTableSource) {
-            String tableName = SQLUtils.normalize(((SQLExprTableSource) fromBody).getTableName());
+            String tableName = ((SQLExprTableSource) fromBody).getTableName();
             String alias = fromBody.getAlias();
             addCondition2QueryInWhere(originCondition, commandType);
             originCondition = newEqualityCondition(tableName, alias, originCondition, commandType);
@@ -522,14 +523,14 @@ public class SqlStatementEditor {
             SQLJoinTableSource.JoinType joinType = joinObject.getJoinType();
             // 处理左外连接添加condition的位置
             if (left instanceof SQLExprTableSource && (joinType == RIGHT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)) {
-                String tableName = SQLUtils.normalize(((SQLExprTableSource) left).getTableName());
+                String tableName = ((SQLExprTableSource) left).getTableName();
                 onCondition = newEqualityCondition(tableName, left.getAlias(), onCondition, commandType);
             } else {
                 addCondition2Query(queryBody, left, commandType);
             }
             // 处理右外连接添加condition的位置
             if (right instanceof SQLExprTableSource && (joinType == LEFT_OUTER_JOIN || joinType == FULL_OUTER_JOIN)) {
-                String tableName = SQLUtils.normalize(((SQLExprTableSource) right).getTableName());
+                String tableName = ((SQLExprTableSource) right).getTableName();
                 onCondition = newEqualityCondition(tableName, right.getAlias(), onCondition, commandType);
             } else {
                 addCondition2Query(queryBody, right, commandType);
@@ -547,9 +548,44 @@ public class SqlStatementEditor {
             addCondition2Query(left, left.getFrom(), commandType);
             addCondition2Query(right, right.getFrom(), commandType);
         } else {
-            throw new SqlHelperException("不支持的sql语句");
+            throw new SqlHelperException("不支持的sql：" + fromBody.getClass().getSimpleName());
         }
+    }
 
+    /**
+     * 返回添加了附加条件的condition语句
+     *
+     * @param tableName       the table name
+     * @param tableAlias      the table alias
+     * @param originCondition the origin condition
+     * @return the sql expr
+     */
+    private SQLExpr newEqualityCondition(String tableName, String tableAlias, SQLExpr originCondition, SqlCommandType commandType) {
+        SQLExpr re = originCondition;
+        String normalizeTableName = SQLUtils.normalize(tableName, dbType);
+        for (InjectColumnInfoHandler infoHandler : injectColumnInfoHandlers) {
+            if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.CONDITION) > 0) {
+                if (!infoHandler.checkTableName(normalizeTableName) || !infoHandler.checkCommandType(commandType)) {
+                    continue;
+                }
+                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
+                if (columnName != null && contains(originCondition, columnName)) {
+                    continue;
+                }
+                SQLExpr condition = null;
+
+                if (infoHandler instanceof ConditionInjectInfo) {
+                    condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
+                } else {
+                    String aliasFieldName = CommonUtils.isEmpty(tableAlias) ? tableName + "." + columnName : tableAlias + "." + columnName;
+                    condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
+
+                }
+                log.warn(String.format("表%s添加过滤条件：%s", tableName, condition.toString()));
+                re = re == null ? condition : SQLUtils.buildCondition(SQLBinaryOperator.BooleanAnd, condition, false, re);
+            }
+        }
+        return re;
     }
 
     /**
@@ -588,40 +624,60 @@ public class SqlStatementEditor {
         return false;
     }
 
-    /**
-     * 返回添加了附加条件的condition语句
-     *
-     * @param tableName       the table name
-     * @param tableAlias      the table alias
-     * @param originCondition the origin condition
-     * @return the sql expr
-     */
-    private SQLExpr newEqualityCondition(String tableName, String tableAlias, SQLExpr originCondition, SqlCommandType commandType) {
-        SQLExpr re = originCondition;
+    public static class Builder {
+        private SqlStatementEditor sqlStatementEditorFactory;
+        private String sql;
 
-        for (InjectColumnInfoHandler infoHandler : injectColumnInfoHandlers) {
-            if ((infoHandler.getInjectTypes() & InjectColumnInfoHandler.CONDITION) > 0) {
-                if (!infoHandler.checkTableName(tableName) || !infoHandler.checkCommandType(commandType)) {
-                    continue;
-                }
-                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
-                if (columnName != null && infoHandler.isExistSkip() && contains(originCondition, columnName)) {
-                    continue;
-                }
-                SQLExpr condition = null;
-
-                if (infoHandler instanceof ConditionInjectInfo) {
-                    condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
-                } else {
-                    String aliasFieldName = CommonUtils.isEmpty(tableAlias) ? tableName + "." + columnName : tableAlias + "." + columnName;
-                    condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
-
-                }
-                log.warn(String.format("表%s添加过滤条件：%s", tableName, condition.toString()));
-                re = re == null ? condition : SQLUtils.buildCondition(SQLBinaryOperator.BooleanAnd, condition, false, re);
-            }
+        public Builder(String sql, DbType dbType) {
+            this.sqlStatementEditorFactory = new SqlStatementEditor();
+            this.sql = sql;
+            this.sqlStatementEditorFactory.dbType = dbType;
         }
-        return re;
+
+        public SqlStatementEditor.Builder injectColumnInfoHandlers(Collection<InjectColumnInfoHandler> injectColumnInfoHandlers) {
+            this.sqlStatementEditorFactory.injectColumnInfoHandlers = injectColumnInfoHandlers;
+            return this;
+        }
+
+        public SqlStatementEditor.Builder columnFilterInfoHandlers(Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers) {
+            this.sqlStatementEditorFactory.columnFilterInfoHandlers = columnFilterInfoHandlers;
+            return this;
+        }
+
+        public SqlStatementEditor.Builder columnAliasMap(Map<String, String> columnAliasMap) {
+            this.sqlStatementEditorFactory.columnAliasMap = columnAliasMap;
+            return this;
+        }
+
+        public SqlStatementEditor.Builder isMapUnderscoreToCamelCase(boolean isMapUnderscoreToCamelCase) {
+            this.sqlStatementEditorFactory.isMapUnderscoreToCamelCase = isMapUnderscoreToCamelCase;
+            return this;
+        }
+
+        public SqlStatementEditor.Builder boundSql(BoundSql boundSql) {
+            this.sqlStatementEditorFactory.boundSql = boundSql;
+            return this;
+        }
+
+        public SqlStatementEditor build() {
+            try {
+                this.sqlStatementEditorFactory.sqlStatement = SQLUtils.parseSingleStatement(sql, this.sqlStatementEditorFactory.dbType);
+            } catch (Exception e) {
+                log.error(sql);
+                throw new SqlHelperException("发现sql语法错误", e);
+            }
+            if(this.sqlStatementEditorFactory.injectColumnInfoHandlers!=null){
+                for(InjectColumnInfoHandler item:this.sqlStatementEditorFactory.injectColumnInfoHandlers){
+                    if(item instanceof LogicDeleteInfoHandler){
+                        this.sqlStatementEditorFactory.logicDeleteInfoHandlers.add((LogicDeleteInfoHandler) item);
+                    }
+                }
+            }else{
+                this.sqlStatementEditorFactory.injectColumnInfoHandlers = new ArrayList<>();
+            }
+            return this.sqlStatementEditorFactory;
+        }
+
     }
 
 

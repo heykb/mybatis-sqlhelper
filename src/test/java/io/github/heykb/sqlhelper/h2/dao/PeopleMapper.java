@@ -47,7 +47,6 @@ public interface PeopleMapper {
     @Select("select * from people")
     Cursor<People> selectCursor(People people);
 
-
     People leftJoinSelect(@Param("id") String id);
 
 

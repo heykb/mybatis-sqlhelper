@@ -28,7 +28,6 @@ import org.apache.ibatis.type.TypeHandler;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 字段注入插件
@@ -154,7 +153,7 @@ public class SqlHelperPlugin implements Interceptor {
             }
 
         }catch (Exception e){
-            throw new SqlHelperException("插件属性解析错误");
+            throw new SqlHelperException("插件属性解析错误", e);
         }
 
     }

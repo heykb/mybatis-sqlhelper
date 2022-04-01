@@ -39,7 +39,6 @@ public class ColumnFilterTypeHandler implements TypeHandler {
                 return;
             }else if(i > item){
                 ++j;
-                break;
             }
         }
         typeHandler.setParameter(ps,i-j,parameter,jdbcType);

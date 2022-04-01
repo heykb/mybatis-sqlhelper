@@ -2,7 +2,6 @@ package io.github.heykb.sqlhelper.handler.abstractor;
 
 
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
-import org.apache.ibatis.mapping.SqlCommandType;
 
 /**
  * 实现InjectColumnInfoHandler自动注入配置接口，代表多租户自动注入配置
@@ -37,7 +36,7 @@ public abstract class TenantInfoHandler implements InjectColumnInfoHandler {
     }
 
     @Override
-    public boolean isExistSkip() {
+    public boolean isExistOverride() {
         return false;
     }
 

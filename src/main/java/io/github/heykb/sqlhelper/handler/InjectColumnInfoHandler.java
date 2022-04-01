@@ -5,6 +5,9 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
 import org.apache.ibatis.mapping.SqlCommandType;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 代表一条自动注入配置，如配置字段名称、字段值、注入类型等
  *
@@ -62,12 +65,12 @@ public interface InjectColumnInfoHandler {
     }
 
     /**
-     * 当注入目标中已存在该字段时，true跳过，false替换
+     * 当update和insert注入时已存在该字段时，true覆盖，false跳过。condition注入不做判断直接新增条件
      *
      * @return boolean
      */
-    default boolean isExistSkip(){
-        return false;
+    default boolean isExistOverride() {
+        return true;
     }
 
 
@@ -98,7 +101,17 @@ public interface InjectColumnInfoHandler {
      * @return
      */
     default boolean checkCommandType(SqlCommandType commandType){
-        return true;
+        Set<SqlCommandType> commandTypes = new HashSet<>();
+        if ((getInjectTypes() & CONDITION) > 0) {
+            return true;
+        }
+        if ((getInjectTypes() & INSERT) > 0) {
+            commandTypes.add(SqlCommandType.INSERT);
+        }
+        if ((getInjectTypes() & UPDATE) > 0) {
+            commandTypes.add(SqlCommandType.UPDATE);
+        }
+        return commandTypes.contains(commandType);
     }
 
 

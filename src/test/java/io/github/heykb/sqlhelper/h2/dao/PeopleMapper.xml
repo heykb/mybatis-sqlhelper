@@ -17,7 +17,8 @@
         age,
         email,
         dept_id,
-        id    </sql>
+        id,
+        updated_by    </sql>
      <insert id="insert" useGeneratedKeys="false" keyColumn="id" keyProperty="id" parameterType="io.github.heykb.sqlhelper.h2.domain.People">
         INSERT INTO people
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -26,6 +27,7 @@
                 <if test ='null != email'>email,</if>
                 <if test ='null != deptId'>dept_id,</if>
                 <if test ='null != id'>id,</if>
+                <if test ='null != updatedBy'>updated_by,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test ='null != name'>#{name},</if>
@@ -33,6 +35,7 @@
                 <if test ='null != email'>#{email},</if>
                 <if test ='null != deptId'>#{deptId},</if>
                 <if test ='null != id'>#{id},</if>
+                <if test ='null != updatedBy'>#{updatedBy},</if>
         </trim>
     </insert>
     <delete id="delete" >
@@ -47,6 +50,7 @@
                 <if test ='null != age'>age = #{age},</if>
                 <if test ='null != email'>email = #{email},</if>
                 <if test ='null != deptId'>dept_id = #{deptId},</if>
+                <if test ='null != updatedBy'>updated_by = #{updatedBy},</if>
         </set>
         WHERE id = #{id}
     </update>
@@ -91,7 +95,7 @@
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO people(<include refid="Base_Column_List" />) VALUES
         <foreach collection="list" item="item" index="index" separator=",">
-            ( #{item.name}, #{item.age}, #{item.email}, #{item.deptId}, #{item.id}
+            ( #{item.name}, #{item.age}, #{item.email}, #{item.deptId}, #{item.id},#{item.updatedBy})
         </foreach>
     </insert>
     <delete id="batchDelete" parameterType="java.util.List">
@@ -101,5 +105,4 @@
             #{id}
         </foreach>
     </delete>
-
 </mapper>
