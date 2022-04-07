@@ -11,7 +11,6 @@ import com.alibaba.druid.sql.dialect.antspark.visitor.AntsparkSchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.db2.visitor.DB2SchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.h2.visitor.H2SchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.hive.visitor.HiveSchemaStatVisitor;
-import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlASTVisitor;
 import com.alibaba.druid.sql.dialect.mysql.visitor.MySqlSchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.odps.visitor.OdpsSchemaStatVisitor;
 import com.alibaba.druid.sql.dialect.oracle.visitor.OracleSchemaStatVisitor;
@@ -30,14 +29,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
-import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.SqlCommandType;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.alibaba.druid.DbType.db2;
-import static com.alibaba.druid.DbType.postgresql;
 import static com.alibaba.druid.sql.ast.statement.SQLJoinTableSource.JoinType.*;
 
 public class SqlStatementEditor {
@@ -49,7 +45,6 @@ public class SqlStatementEditor {
     private Collection<InjectColumnInfoHandler> injectColumnInfoHandlers;
     private Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers;
     private List<LogicDeleteInfoHandler> logicDeleteInfoHandlers = new ArrayList<>();
-
     private SchemaStatVisitor schemaStatVisitor;
     private Set<String> tableNames = new HashSet<>();
     private Map<String,Set<String>> tableName2needFilterColumns = new HashMap<>();
@@ -129,6 +124,9 @@ public class SqlStatementEditor {
     }
 
     public Result processing() {
+        if(sqlStatement == null){
+            return null;
+        }
         if (sqlStatement instanceof SQLSelectStatement) {
             sqlStatement.accept(schemaStatVisitor);
             preFilterByTableNames(InjectColumnInfoHandler.class);
@@ -560,7 +558,7 @@ public class SqlStatementEditor {
             addCondition2Query(left, left.getFrom(), commandType);
             addCondition2Query(right, right.getFrom(), commandType);
         } else {
-            throw new SqlHelperException("不支持的sql：" + fromBody.getClass().getSimpleName());
+            throw new SqlHelperException("不支持的sql,请排除，或者联系作者添加支持。" + fromBody.toString());
         }
     }
 
@@ -637,53 +635,54 @@ public class SqlStatementEditor {
     }
 
     public static class Builder {
-        private SqlStatementEditor sqlStatementEditorFactory;
+        private SqlStatementEditor sqlStatementEditor;
         private String sql;
 
         public Builder(String sql, DbType dbType) {
-            this.sqlStatementEditorFactory = new SqlStatementEditor();
+            this.sqlStatementEditor = new SqlStatementEditor();
             this.sql = sql;
-            this.sqlStatementEditorFactory.dbType = dbType;
+            this.sqlStatementEditor.dbType = dbType;
         }
 
         public SqlStatementEditor.Builder injectColumnInfoHandlers(Collection<InjectColumnInfoHandler> injectColumnInfoHandlers) {
-            this.sqlStatementEditorFactory.injectColumnInfoHandlers = injectColumnInfoHandlers;
+            this.sqlStatementEditor.injectColumnInfoHandlers = injectColumnInfoHandlers;
             return this;
         }
 
         public SqlStatementEditor.Builder columnFilterInfoHandlers(Collection<ColumnFilterInfoHandler> columnFilterInfoHandlers) {
-            this.sqlStatementEditorFactory.columnFilterInfoHandlers = columnFilterInfoHandlers;
+            this.sqlStatementEditor.columnFilterInfoHandlers = columnFilterInfoHandlers;
             return this;
         }
 
         public SqlStatementEditor.Builder columnAliasMap(Map<String, String> columnAliasMap) {
-            this.sqlStatementEditorFactory.columnAliasMap = columnAliasMap;
+            this.sqlStatementEditor.columnAliasMap = columnAliasMap;
             return this;
         }
 
         public SqlStatementEditor.Builder isMapUnderscoreToCamelCase(boolean isMapUnderscoreToCamelCase) {
-            this.sqlStatementEditorFactory.isMapUnderscoreToCamelCase = isMapUnderscoreToCamelCase;
+            this.sqlStatementEditor.isMapUnderscoreToCamelCase = isMapUnderscoreToCamelCase;
             return this;
         }
 
         public SqlStatementEditor build() {
             try {
-                this.sqlStatementEditorFactory.sqlStatement = SQLUtils.parseSingleStatement(sql, this.sqlStatementEditorFactory.dbType);
+                this.sqlStatementEditor.sqlStatement = SQLUtils.parseSingleStatement(sql, this.sqlStatementEditor.dbType);
             } catch (Exception e) {
-                log.error(sql);
-                throw new SqlHelperException("发现sql语法错误", e);
+                log.error("druid无法解析该sql,请检查语法。");
+                this.sqlStatementEditor.sqlStatement = null;
+                return this.sqlStatementEditor;
             }
-            if(this.sqlStatementEditorFactory.injectColumnInfoHandlers!=null){
-                for(InjectColumnInfoHandler item:this.sqlStatementEditorFactory.injectColumnInfoHandlers){
+            if(this.sqlStatementEditor.injectColumnInfoHandlers!=null){
+                for(InjectColumnInfoHandler item:this.sqlStatementEditor.injectColumnInfoHandlers){
                     if(item instanceof LogicDeleteInfoHandler){
-                        this.sqlStatementEditorFactory.logicDeleteInfoHandlers.add((LogicDeleteInfoHandler) item);
+                        this.sqlStatementEditor.logicDeleteInfoHandlers.add((LogicDeleteInfoHandler) item);
                     }
                 }
             }else{
-                this.sqlStatementEditorFactory.injectColumnInfoHandlers = new ArrayList<>();
+                this.sqlStatementEditor.injectColumnInfoHandlers = new ArrayList<>();
             }
-            this.sqlStatementEditorFactory.schemaStatVisitor = getSchemaStatVisitor(this.sqlStatementEditorFactory.dbType);
-            return this.sqlStatementEditorFactory;
+            this.sqlStatementEditor.schemaStatVisitor = getSchemaStatVisitor(this.sqlStatementEditor.dbType);
+            return this.sqlStatementEditor;
         }
 
     }

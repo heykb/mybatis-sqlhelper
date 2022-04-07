@@ -122,31 +122,30 @@ public class SqlHelperPlugin implements Interceptor {
             properties = new Properties();
         }
         try{
-            this.enable = Boolean.parseBoolean((String) properties.getOrDefault("enable","true")) ;
-            this.multiTenantEnable = Boolean.parseBoolean((String) properties.getOrDefault("multi-tenant.enable","true")) ;
-            this.logicDeleteEnable = Boolean.parseBoolean((String)properties.getOrDefault("logic-delete.enable","true")) ;
-            this.dbType = DbType.of(properties.getProperty("dbType"));
-            this.tbAliasPrefix  = properties.getProperty("tbAliasPrefix");
+            this.enable = Boolean.parseBoolean((String) properties.getOrDefault(enableProp,"true")) ;
+            this.multiTenantEnable = Boolean.parseBoolean((String) properties.getOrDefault(multiTenantEnableProp,"true")) ;
+            this.logicDeleteEnable = Boolean.parseBoolean((String)properties.getOrDefault(logicDeleteEnableProp,"true")) ;
+            this.dbType = DbType.of(properties.getProperty(dbTypeProp));
             // 读取InjectColumnInfoHandler
-            String commaString = properties.getProperty("InjectColumnInfoHandler");
+            String commaString = properties.getProperty(injectColumnInfoHandlersProp);
             if (!CommonUtils.isEmpty(commaString)) {
                 String[] classes = commaString.split(",");
                 this.injectColumnInfoHandlers = CommonUtils.getInstanceByClassName(classes);
             }
             // 读取DynamicFindInjectInfoHandler
-            String classString = properties.getProperty("DynamicFindInjectInfoHandler");
+            String classString = properties.getProperty(dynamicFindInjectInfoHandlerProp);
             if (!CommonUtils.isEmpty(classString)) {
                 String[] classes = new String[]{classString};
                 this.dynamicFindInjectInfoHandler = (DynamicFindInjectInfoHandler) CommonUtils.getInstanceByClassName(classes).get(0);
             }
             // 读取InjectColumnInfoHandler
-            commaString = properties.getProperty("ColumnFilterInfoHandler");
+            commaString = properties.getProperty(columnFilterInfoHandlersProp);
             if (!CommonUtils.isEmpty(commaString)) {
                 String[] classes = commaString.split(",");
                 this.columnFilterInfoHandlers = CommonUtils.getInstanceByClassName(classes);
             }
             // 读取DynamicFindInjectInfoHandler
-            classString = properties.getProperty("DynamicFindColumnFilterHandler");
+            classString = properties.getProperty(dynamicFindColumnFilterHandlerProp);
             if (!CommonUtils.isEmpty(classString)) {
                 String[] classes = new String[]{classString};
                 this.dynamicFindColumnFilterHandler = (DynamicFindColumnFilterHandler) CommonUtils.getInstanceByClassName(classes).get(0);
@@ -157,9 +156,6 @@ public class SqlHelperPlugin implements Interceptor {
         }
 
     }
-
-
-
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -304,13 +300,13 @@ public class SqlHelperPlugin implements Interceptor {
 
         // 处理sql
         if (handlers.size() > 0 || columnFilterInfoHandlers.size() > 0) {
-            SqlStatementEditor sqlStatementEditorFactory = new SqlStatementEditor.Builder(boundSql.getSql(), dbType)
+            SqlStatementEditor sqlStatementEditor = new SqlStatementEditor.Builder(boundSql.getSql(), dbType)
                     .columnAliasMap(resultPropertiesMap)
                     .isMapUnderscoreToCamelCase(mappedStatement.getConfiguration().isMapUnderscoreToCamelCase())
                     .injectColumnInfoHandlers(handlers)
                     .columnFilterInfoHandlers(columnFilterInfoHandlers)
                     .build();
-            SqlStatementEditor.Result result = sqlStatementEditorFactory.processing();
+            SqlStatementEditor.Result result = sqlStatementEditor.processing();
             if (result != null) {
                 if (boundSql.getParameterMappings() != null && !CollectionUtils.isEmpty(result.getRemovedParamIndex())) {
                     for (ParameterMapping parameterMapping : boundSql.getParameterMappings()) {

@@ -118,12 +118,12 @@ public class SqlInjectColunmnHelperTest {
                 return "v_auth_model".equals(tableName);
             }
         };
-        SqlStatementEditor sqlStatementEditorFactory =
+        SqlStatementEditor sqlStatementEditor =
                 new SqlStatementEditor.Builder(sql, DbType.postgresql)
                         .injectColumnInfoHandlers(Arrays.asList(right))
                         .columnFilterInfoHandlers(Arrays.asList(columnFilterInfoHandler))
                         .build();
-        SqlStatementEditor.Result result = sqlStatementEditorFactory.processing();
+        SqlStatementEditor.Result result = sqlStatementEditor.processing();
 
         System.out.println(result.getSql());
     }
