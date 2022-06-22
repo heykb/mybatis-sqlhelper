@@ -40,8 +40,4 @@ public abstract class LogicDeleteInfoHandler implements InjectColumnInfoHandler 
         return CONDITION;
     }
 
-    @Override
-    public boolean checkCommandType(SqlCommandType commandType) {
-        return SqlCommandType.DELETE != commandType;
-    }
 }

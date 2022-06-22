@@ -1,5 +1,7 @@
 package io.github.heykb.sqlhelper.handler;
 
+import org.apache.ibatis.mapping.SqlCommandType;
+
 import java.util.Set;
 
 /**
@@ -27,4 +29,8 @@ public interface ColumnFilterInfoHandler {
     }
 
     boolean checkTableName(String tableName);
+
+    default boolean checkCommandType(SqlCommandType commandType){
+        return SqlCommandType.SELECT == commandType || SqlCommandType.UPDATE == commandType;
+    }
 }

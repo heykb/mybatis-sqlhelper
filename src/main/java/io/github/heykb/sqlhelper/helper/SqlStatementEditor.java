@@ -51,7 +51,7 @@ public class SqlStatementEditor {
     private SqlStatementEditor() {
     }
 
-    void preFilterByTableNames(Class clazz) {
+    void preFilterByTableNames(Class clazz,SqlCommandType sqlCommandType) {
         if(tableNames.size()==0){
             for (TableStat.Name name : schemaStatVisitor.getTables().keySet()) {
                 tableNames.add(name.getName());
@@ -60,6 +60,9 @@ public class SqlStatementEditor {
         if (clazz.isAssignableFrom(LogicDeleteInfoHandler.class)) {
             if (logicDeleteInfoHandlers != null) {
                 logicDeleteInfoHandlers = logicDeleteInfoHandlers.stream().filter(item -> {
+                    if(!item.checkCommandType(sqlCommandType)){
+                        return false;
+                    }
                     for (String normalizedTableName : tableNames) {
                         if (item.checkTableName(normalizedTableName)) {
                             return true;
@@ -74,6 +77,9 @@ public class SqlStatementEditor {
             if (columnFilterInfoHandlers != null) {
                 columnFilterInfoHandlers = columnFilterInfoHandlers.stream().filter(item -> {
                     boolean re = false;
+                    if(!item.checkCommandType(sqlCommandType)){
+                        return false;
+                    }
                     for (String normalizedTableName : tableNames) {
                         if (item.checkTableName(normalizedTableName)) {
                             Set<String> needFilterColumns = tableName2needFilterColumns.get(normalizedTableName);
@@ -96,6 +102,9 @@ public class SqlStatementEditor {
         if (clazz.isAssignableFrom(InjectColumnInfoHandler.class)) {
             if (injectColumnInfoHandlers != null) {
                 injectColumnInfoHandlers = injectColumnInfoHandlers.stream().filter(item -> {
+                    if(!item.checkCommandType(sqlCommandType)){
+                        return false;
+                    }
                     for (String normalizedTableName : tableNames) {
                         if (item.checkTableName(normalizedTableName)) {
                             return true;
@@ -129,31 +138,31 @@ public class SqlStatementEditor {
         }
         if (sqlStatement instanceof SQLSelectStatement) {
             sqlStatement.accept(schemaStatVisitor);
-            preFilterByTableNames(InjectColumnInfoHandler.class);
-            preFilterByTableNames(ColumnFilterInfoHandler.class);
+            preFilterByTableNames(InjectColumnInfoHandler.class,SqlCommandType.SELECT);
+            preFilterByTableNames(ColumnFilterInfoHandler.class,SqlCommandType.SELECT);
             if (tableNames.size() == 0) {
                 return null;
             }
             return processing((SQLSelectStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLUpdateStatement) {
             sqlStatement.accept(schemaStatVisitor);
-            preFilterByTableNames(InjectColumnInfoHandler.class);
-            preFilterByTableNames(ColumnFilterInfoHandler.class);
+            preFilterByTableNames(InjectColumnInfoHandler.class,SqlCommandType.UPDATE);
+            preFilterByTableNames(ColumnFilterInfoHandler.class,SqlCommandType.UPDATE);
             if (tableNames.size() == 0) {
                 return null;
             }
             return processing((SQLUpdateStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLDeleteStatement) {
             sqlStatement.accept(schemaStatVisitor);
-            preFilterByTableNames(InjectColumnInfoHandler.class);
-            preFilterByTableNames(LogicDeleteInfoHandler.class);
+            preFilterByTableNames(InjectColumnInfoHandler.class,SqlCommandType.DELETE);
+            preFilterByTableNames(LogicDeleteInfoHandler.class,SqlCommandType.DELETE);
             if (tableNames.size() == 0) {
                 return null;
             }
             return processing((SQLDeleteStatement) sqlStatement);
         } else if (sqlStatement instanceof SQLInsertStatement) {
             sqlStatement.accept(schemaStatVisitor);
-            preFilterByTableNames(InjectColumnInfoHandler.class);
+            preFilterByTableNames(InjectColumnInfoHandler.class,SqlCommandType.INSERT);
             if (tableNames.size() == 0) {
                 return null;
             }

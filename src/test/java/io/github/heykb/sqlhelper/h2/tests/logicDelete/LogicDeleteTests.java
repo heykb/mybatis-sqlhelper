@@ -26,9 +26,6 @@ public class LogicDeleteTests {
         // create a SqlSessionFactory
         try (Reader reader = Resources.getResourceAsReader("io/github/heykb/sqlhelper/h2/mybatis-logicDelete.xml")) {
             sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
-            Environment environment = sqlSessionFactory.getConfiguration().getEnvironment();
-            Environment newEnv = new Environment(environment.getId(),environment.getTransactionFactory(),new SqlHelperDynamicDataSourceProxy(environment.getDataSource()));
-            sqlSessionFactory.getConfiguration().setEnvironment(newEnv);
         }
         BaseDataUtils.runScript(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(),
                 "io/github/heykb/sqlhelper/h2/db/employees.sql");
