@@ -12,10 +12,6 @@
 </dependency>
 ~~~
 
-## 关联
-1. [MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)
-2. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
-3. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
 ## IDEA提示
 ![属性提示](images/sqlhelperTip.png)
 

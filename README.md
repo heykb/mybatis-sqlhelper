@@ -45,10 +45,9 @@
 * 强大的字段自动注入能力（<i>查询条件注入/插入语句注入/更新语句注入/查询列过滤</i>），定制其他业务逻辑
 * 支持多种数据库（基于阿里 druid sql解析器）
 
-## 关联
-1. [MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)
-2. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
-3. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
+## spring 集成
+1. [MyBatis SqlHelper Spring](./mybatis-sqlhelper-spring/README.md)
+2. [MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
 
 ### [查看博客戳这里 👆](https://heykb.github.io)
    

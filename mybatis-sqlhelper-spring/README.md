@@ -12,11 +12,6 @@
 </dependency>
 ~~~
 
-## 关联
-1. [MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)
-2. [MyBatis SqlHelper Spring](https://github.com/heykb/mybatis-sqlhelper-spring)
-3. [MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
-
 ## 在applicationContext.xml中如下配置
 
 注意使用[SqlHelperPluginFactoryBean](src/main/java/io/github/heykb/sqlhelper/spring/SqlHelperPluginFactoryBean.java)工厂类创建bean而不是SqlHelperPlugin，[SqlHelperPluginFactoryBean](src/main/java/io/github/heykb/sqlhelper/spring/SqlHelperPluginFactoryBean.java)提供了自动扫描注入信息类的bean的能力，通过其properties属性可以像原始方式一样配置各项参数。SqlHelperPlugin的详细参数参见[MyBatis SqlHelper](https://github.com/heykb/mybatis-sqlhelper)。
