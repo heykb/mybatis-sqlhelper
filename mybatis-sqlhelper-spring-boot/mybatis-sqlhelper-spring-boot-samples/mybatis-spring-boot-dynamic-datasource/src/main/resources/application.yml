@@ -1,0 +1,8 @@
+sqlhelper:
+  logic-delete:
+    enable: true
+    column-name: is_deleted
+    not-deleted-value: "'N'"
+    deleteSqlDemo: update xx set is_deleted = 'Y'
+    ignoreMapperIds: '**.noPlugin*'
+    ignoreTables: xx,xxx

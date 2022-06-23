@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>io.github.heykb</groupId>
+        <artifactId>mybatis-sqlHelper-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>mybatis-sqlHelper-spring-boot</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>mybatis-sqlhelper-spring-boot-starter</module>
+        <module>mybatis-sqlhelper-spring-boot-autoconfigure</module>
+        <module>mybatis-sqlhelper-spring-boot-samples</module>
+    </modules>
+
+    <name>MyBatis SqlHelper Spring Boot</name>
+    <description>MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper Spring Boot版本</description>
+
+    <properties>
+        <mybatis.version>3.5.7</mybatis.version>
+        <mybatis-spring-boot.version>2.1.1</mybatis-spring-boot.version>
+        <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-autoconfigure</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.heykb</groupId>
+                <artifactId>mybatis-sqlhelper-spring-boot-autoconfigure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.heykb</groupId>
+                <artifactId>mybatis-sqlHelper-spring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

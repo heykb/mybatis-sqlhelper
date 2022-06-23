@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.github.heykb.sqlhelper.spring.primary.dao.PeopleMapper">
+    <resultMap id="BaseResultMap" type="io.github.heykb.sqlhelper.spring.primary.domain.People">
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="age" jdbcType="INTEGER" property="age" />
+        <result column="email" jdbcType="VARCHAR" property="email" />
+        <result column="dept_id" jdbcType="VARCHAR" property="deptId" />
+        <result column="id" jdbcType="VARCHAR" property="id" />
+        <result column="created_by" jdbcType="VARCHAR" property="createdBy" />
+        <result column="updated_by" jdbcType="VARCHAR" property="updatedBy" />
+        <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        name,
+        age,
+        email,
+        dept_id,
+        id    </sql>
+     <insert id="insert" useGeneratedKeys="false" keyColumn="id" keyProperty="id" parameterType="io.github.heykb.sqlhelper.spring.primary.domain.People">
+        INSERT INTO people
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+                <if test ='null != name'>name,</if>
+                <if test ='null != age'>age,</if>
+                <if test ='null != email'>email,</if>
+                <if test ='null != deptId'>dept_id,</if>
+                <if test ='null != id'>id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+                <if test ='null != name'>#{name},</if>
+                <if test ='null != age'>#{age},</if>
+                <if test ='null != email'>#{email},</if>
+                <if test ='null != deptId'>#{deptId},</if>
+                <if test ='null != id'>#{id},</if>
+        </trim>
+    </insert>
+    <delete id="delete" >
+        DELETE FROM people
+        WHERE id = #{id}
+    </delete>
+
+    <update id="update" parameterType="io.github.heykb.sqlhelper.spring.primary.domain.People">
+        UPDATE people
+        <set>
+                <if test ='null != name'>name = #{name},</if>
+                <if test ='null != age'>age = #{age},</if>
+                <if test ='null != email'>email = #{email},</if>
+                <if test ='null != deptId'>dept_id = #{deptId},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="select" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM people
+        WHERE id = #{id}
+    </select>
+
+    <select id="leftJoinSelect" resultMap="BaseResultMap">
+        SELECT p.*
+        FROM people p left join "department" d on p.dept_id = d.dept_id
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="noPluginSelect" resultMap="BaseResultMap" parameterType="io.github.heykb.sqlhelper.spring.primary.domain.People">
+        SELECT *
+        FROM people
+        <where>
+            <if test='name != null'>and name = #{name}</if>
+            <if test='age != null'>and age = #{age}</if>
+            <if test='email != null'>and email = #{email}</if>
+            <if test='deptId != null'>and dept_id = #{deptId}</if>
+            <if test='id != null'>and id = #{id}</if>
+        </where>
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap" parameterType="io.github.heykb.sqlhelper.spring.primary.domain.People">
+        SELECT <include refid="Base_Column_List" />
+        FROM people
+        <where>
+            <if test='name != null'>and name = #{name}</if>
+            <if test='age != null'>and age = #{age}</if>
+            <if test='email != null'>and email = #{email}</if>
+            <if test='deptId != null'>and dept_id = #{deptId}</if>
+            <if test='id != null'>and id = #{id}</if>
+        </where>
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO people(<include refid="Base_Column_List" />) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            ( #{item.name}, #{item.age}, #{item.email}, #{item.deptId}, #{item.id}
+        </foreach>
+    </insert>
+    <delete id="batchDelete" parameterType="java.util.List">
+        DELETE FROM people 
+        WHERE id IN
+        <foreach collection="list" index="index" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
