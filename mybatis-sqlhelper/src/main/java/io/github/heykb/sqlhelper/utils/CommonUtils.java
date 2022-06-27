@@ -77,18 +77,24 @@ public class CommonUtils {
                 filterColumns(item, ignoreColumns, isMapUnderscoreToCamelCase);
             }
         } else if (Map.class.isAssignableFrom(o.getClass())) {
-            List<String> removeKeys = new ArrayList<>();
+//            List<String> removeKeys = new ArrayList<>();
             Map<String, Object> map = (Map<String, Object>) o;
-            for (String key : map.keySet()) {
-                for (String column : ignoreColumns) {
-                    if (ignoreColumns.contains(column)) {
-                        removeKeys.add(key);
-                    }
+            Iterator<Map.Entry<String, Object>> iterator = map.entrySet().iterator();
+            while(iterator.hasNext()){
+                if(ignoreColumns.contains(iterator.next().getKey().toLowerCase())){
+                    iterator.remove();
                 }
             }
-            for (String key : removeKeys) {
-                map.remove(key);
-            }
+//            for (String key : map.keySet()) {
+//                for (String column : ignoreColumns) {
+//                    if (ignoreColumns.contains(column)) {
+//                        removeKeys.add(key);
+//                    }
+//                }
+//            }
+//            for (String key : removeKeys) {
+//                map.remove(key);
+//            }
         } else {
             Class clazz = o.getClass();
             Field[] fields = clazz.getDeclaredFields();

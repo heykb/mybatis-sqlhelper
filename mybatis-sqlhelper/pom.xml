@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <druid.version>1.2.4</druid.version>
+        <druid.version>1.2.11</druid.version>
         <guava.version>21.0</guava.version>
         <commons-collections.version>3.2.2</commons-collections.version>
     </properties>

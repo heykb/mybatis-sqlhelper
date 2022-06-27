@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tests>
+
+    <test type="condition" name="select unix_timestamp" column="tenant_id" value="1" db="mysql">
+        <origin>
+            select unix_timestamp(current_timestamp()) * 1000 as c_timestamp
+        </origin>
+        <target>
+            null
+        </target>
+    </test>
+    <test type="condition" name="多表Delete4" column="tenant_id" value="1" db="mysql">
+        <origin>
+            delete from mv
+            using mv
+            left join track
+            on mv.mvid=track.trkid
+            where track.trkid is null
+        </origin>
+        <target>
+            delete from mv
+            using mv
+            left join track
+            on mv.mvid=track.trkid  and track.tenant_id=1
+            where track.trkid is null and mv.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Delete3" column="tenant_id" value="1" db="sqlserver">
+        <origin>
+            delete mv
+            from mv
+            left join track
+            on mv.mvid=track.trkid
+            where track.trkid is null
+        </origin>
+        <target>
+            delete mv
+            from mv
+            left join track
+            on mv.mvid=track.trkid and track.tenant_id=1
+            where track.trkid is null and mv.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Delete2" column="tenant_id" value="1" db="mysql">
+        <origin>
+            delete from mv
+            using mv,track
+            where track.trkid=mv.mvid
+        </origin>
+        <target>
+            delete from mv
+            using mv,track
+            where track.trkid=mv.mvid and mv.tenant_id=1 and track.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Delete1" column="tenant_id" value="1" db="sqlserver">
+        <origin>
+            delete mv
+            from mv,track
+            where track.trkid=mv.mvid
+        </origin>
+        <target>
+            delete mv
+            from mv,track
+            where track.trkid=mv.mvid and mv.tenant_id=1 and track.tenant_id=1
+        </target>
+    </test>
+    <test type="condition,update" name="多表Update5" column="tenant_id" value="1" db="sqlserver">
+        <origin>
+            update s,c set s.class_name='test00',c.stu_name='test00'
+            from student s,class c  where s.class_id = c.id
+        </origin>
+        <target>
+            update s,c set s.class_name='test00',c.stu_name='test00',s.tenant_id=1,c.tenant_id=1
+            from student s,class c  where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Update4" column="tenant_id" value="1" db="sqlserver">
+        <origin>
+            update s,c set s.class_name='test00',c.stu_name='test00'
+            from student s,class c  where s.class_id = c.id
+        </origin>
+        <target>
+            update s,c set s.class_name='test00',c.stu_name='test00'
+            from student s,class c  where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Update3" column="tenant_id" value="1" db="oracle">
+        <origin>
+            update student s,class c
+            set s.class_name='test00',c.stu_name='test00' where s.class_id = c.id
+        </origin>
+        <target>
+            update student s,class c
+            set s.class_name='test00',c.stu_name='test00' where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Update3" column="tenant_id" value="1" db="oracle">
+        <origin>
+            update student s join class c on s.class_id = c.id set s.class_name='test11'
+        </origin>
+        <target>
+            update student s join class c on s.class_id = c.id set s.class_name='test11' WHERE s.tenant_id=1 And c.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Update2" column="tenant_id" value="1" db="oracle">
+        <origin>
+            UPDATE student s LEFT JOIN class c ON s.class_id = c.id
+            SET s.class_name='test22',c.stu_name='test22'
+        </origin>
+        <target>
+            UPDATE student s LEFT JOIN class c ON s.class_id = c.id and c.tenant_id=1
+            SET s.class_name='test22',c.stu_name='test22' WHERE s.tenant_id=1
+        </target>
+    </test>
+    <test type="condition" name="多表Update1" column="tenant_id" value="1" db="oracle">
+        <origin>
+            update student left join class on student.class_id = class.id
+            set student.class_name='test22',class.stu_name='test22'
+        </origin>
+        <target>
+            update student left join class on student.class_id = class.id and class.tenant_id=1
+            set student.class_name='test22',class.stu_name='test22' where student.tenant_id=1
+        </target>
+    </test>
+    <test type="condition,insert" name="多表Insert first when" column="tenant_id" value="1" db="oracle">
+        <origin>
+            INSERT FIRST
+            when object_id > 5 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, 'IBM')
+            when object_id > 10 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, ?)
+            else INTO customers (customer_id, customer_name, city) VALUES (999999, 'Anderson Construction', 'New York')
+            SELECT object_id FROM t;
+        </origin>
+        <target>
+            INSERT FIRST
+            when object_id > 5 then  INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (?, 'IBM',1)
+            when object_id > 10 then  INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (?, ?,1)
+            else INTO customers (customer_id, customer_name, city,tenant_id) VALUES (999999, 'Anderson Construction', 'New York',1)
+            SELECT object_id FROM t WHERE t.tenant_id = 1;
+        </target>
+    </test>
+    <test type="condition,insert" name="多表Insert all when" column="tenant_id" value="1" db="oracle">
+        <origin>
+            INSERT ALL
+            when object_id > 5 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, 'IBM')
+            when object_id > 10 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, ?)
+            else INTO customers (customer_id, customer_name, city) VALUES (999999, 'Anderson Construction', 'New York')
+            SELECT object_id FROM t;
+        </origin>
+        <target>
+            INSERT ALL
+            when object_id > 5 then  INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (?, 'IBM',1)
+            when object_id > 10 then  INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (?, ?,1)
+            else INTO customers (customer_id, customer_name, city,tenant_id) VALUES (999999, 'Anderson Construction', 'New York',1)
+            SELECT object_id FROM t WHERE t.tenant_id = 1;
+        </target>
+    </test>
+    <test type="condition,insert" name="多表Insert all" column="tenant_id" value="1" db="oracle">
+        <origin>
+            INSERT ALL
+            INTO suppliers (supplier_id, supplier_name) VALUES (1000, 'IBM')
+            INTO suppliers (supplier_id, supplier_name) VALUES (2000, 'Microsoft')
+            INTO suppliers (supplier_id, supplier_name) VALUES (3000, 'Google')
+            SELECT * FROM dual;
+        </origin>
+        <target>
+            INSERT ALL
+            INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (1000, 'IBM',1)
+            INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (2000, 'Microsoft',1)
+            INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (3000, 'Google',1)
+            SELECT * FROM dual WHERE dual.tenant_id = 1;
+        </target>
+    </test>
+    <test type="condition"  name="qq用户（732811911）提交" column="tenant_id" value="1" db="mysql">
+        <origin>
+            UPDATE chart_view cv,
+            chart_view_cache cve
+            SET cv.` NAME ` = cve.` NAME `,
+            cv.title = cve.title,
+            cv.scene_id = cve.scene_id
+            WHERE
+            cve.ID = cv.ID
+            AND cv.ID IN ( ?, ? )
+        </origin>
+        <target>
+            UPDATE chart_view cv, chart_view_cache cve
+            SET cv.` NAME ` = cve.` NAME `, cv.title = cve.title, cv.scene_id = cve.scene_id
+            WHERE cve.ID = cv.ID
+            AND cv.ID IN (?, ?)
+            AND cv.tenant_id = 1
+            AND cve.tenant_id = 1
+        </target>
+    </test>
+    <test type="condition,update"  name="更新语句set value中的查询" column="tenant_id" value="1" db="mysql">
+        <origin>
+            UPDATE Persons
+            SET  PersonCityName=(SELECT AddressList.PostCode
+            FROM AddressList
+            WHERE AddressList.PersonId = Persons.PersonId)
+        </origin>
+        <target>
+            UPDATE Persons
+            SET  PersonCityName=(SELECT AddressList.PostCode
+                FROM AddressList
+                WHERE AddressList.PersonId = Persons.PersonId AND AddressList.tenant_id = 1),
+                tenant_id=1
+            WHERE Persons.tenant_id = 1
+        </target>
+    </test>
+    <test type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
+        <origin>
+            INSERT INTO Customers (CustomerName, City, Country)
+            SELECT SupplierName, City, Country FROM Suppliers s
+        </origin>
+        <target>
+            INSERT INTO Customers (CustomerName, City, Country)
+            SELECT SupplierName, City, Country FROM Suppliers s WHERE s.tenant_id = 1
+        </target>
+    </test>
+    <test type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
+        <origin>
+            INSERT INTO Customers (CustomerName, City, Country)
+            SELECT SupplierName, City, Country FROM Suppliers
+        </origin>
+        <target>
+            INSERT INTO Customers (CustomerName, City, Country)
+            SELECT SupplierName, City, Country FROM Suppliers WHERE Suppliers.tenant_id = 1
+        </target>
+    </test>
+    <test type="condition"  name="selectTest" column="tenant_id" value="1" db="mysql">
+        <origin>
+            select * from people
+        </origin>
+        <target>
+            select * from people where people.tenant_id=1
+        </target>
+    </test>
+    <test type="condition"  name="leftJoinTest" column="tenant_id" value="1" db="mysql">
+       <origin>
+           select p.* from people p left join dept d on p.dept_id = d.dept_id
+       </origin>
+       <target>
+           select p.* from people p left join dept d on p.dept_id = d.dept_id and d.tenant_id=1 where p.tenant_id=1
+       </target>
+    </test>
+    <test type="condition"  name="rightJoinTest" column="tenant_id" value="1" db="mysql">
+        <origin>
+            select p.* from people p right join dept d on p.dept_id = d.dept_id
+        </origin>
+        <target>
+            select p.* from people p right join dept d on p.dept_id = d.dept_id and p.tenant_id=1 where d.tenant_id=1
+        </target>
+    </test>
+    <test type="condition"  name="innerJoinTest" column="tenant_id" value="1" db="mysql">
+        <origin>
+            select p.* from people p join dept d on p.dept_id = d.dept_id
+        </origin>
+        <target>
+            select p.* from people p join dept d on p.dept_id = d.dept_id  where  p.tenant_id=1 and d.tenant_id=1
+        </target>
+    </test>
+    <test type="condition"  name="outerJoinTest" column="tenant_id" value="1" db="mysql">
+        <origin>
+            select p.* from people p full join dept d on p.dept_id = d.dept_id
+        </origin>
+        <target>
+            select p.* from people p full join dept d on p.dept_id = d.dept_id and p.tenant_id=1 and d.tenant_id=1
+        </target>
+    </test>
+
+</tests>
