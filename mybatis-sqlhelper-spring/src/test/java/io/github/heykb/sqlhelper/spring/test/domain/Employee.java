@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.heykb.sqlhelper.spring.primary.domain;
+package io.github.heykb.sqlhelper.spring.test.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

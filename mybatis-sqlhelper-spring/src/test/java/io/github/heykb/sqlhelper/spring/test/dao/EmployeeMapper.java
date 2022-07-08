@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.spring.primary.dao;
+package io.github.heykb.sqlhelper.spring.test.dao;
 
 
 import org.apache.ibatis.annotations.Delete;

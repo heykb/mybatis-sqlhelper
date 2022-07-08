@@ -1,6 +1,6 @@
-package io.github.heykb.sqlhelper.spring.primary.dao;
+package io.github.heykb.sqlhelper.spring.test.dao;
 
-import io.github.heykb.sqlhelper.spring.primary.domain.People;
+import io.github.heykb.sqlhelper.spring.test.domain.People;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

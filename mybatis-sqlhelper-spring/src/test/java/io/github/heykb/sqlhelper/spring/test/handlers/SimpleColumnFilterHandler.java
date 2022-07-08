@@ -1,10 +1,8 @@
-package io.github.heykb.sqlhelper.spring.primary.handlers;
+package io.github.heykb.sqlhelper.spring.test.handlers;
 
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
 import org.apache.commons.compress.utils.Sets;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 
 /**

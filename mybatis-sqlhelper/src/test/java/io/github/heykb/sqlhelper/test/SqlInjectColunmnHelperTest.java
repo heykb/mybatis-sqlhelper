@@ -1,15 +1,4 @@
-package io.github.heykb.sqlhelper;
-
-import com.alibaba.druid.DbType;
-import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
-import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
-import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
-import io.github.heykb.sqlhelper.helper.SqlStatementEditor;
-import org.apache.commons.compress.utils.Sets;
-import org.apache.ibatis.mapping.SqlCommandType;
-
-import java.util.Arrays;
-import java.util.Set;
+package io.github.heykb.sqlhelper.test;
 
 public class SqlInjectColunmnHelperTest {
     public static void main(String[] args) {

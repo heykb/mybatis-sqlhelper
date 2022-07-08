@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.spring.primary.handlers;
+package io.github.heykb.sqlhelper.spring.test.handlers;
 
 
 import io.github.heykb.sqlhelper.handler.abstractor.TenantInfoHandler;

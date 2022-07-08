@@ -1,7 +1,6 @@
-package io.github.heykb.sqlhelper.condition;
+package io.github.heykb.sqlhelper.test;
 
 import com.alibaba.druid.sql.SQLUtils;
-import io.github.heykb.sqlhelper.BaseUtils;
 import io.github.heykb.sqlhelper.helper.SqlStatementEditor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Named;
@@ -15,7 +14,7 @@ import java.util.stream.Stream;
 public class CompareSqlTest {
 
     static Stream<Arguments> parse() throws Exception {
-        return BaseUtils.parse("io/github/heykb/sqlhelper/condition/testSql.xml").stream()
+        return BaseUtils.parse("io/github/heykb/sqlhelper/test/testSql.xml").stream()
                 .map(item-> Arguments.of(Named.of(item.name(),item)));
     }
 
@@ -31,7 +30,8 @@ public class CompareSqlTest {
             Assertions.assertTrue(sqlTest.target().trim().equals("null"));
         }else{
             System.out.println(result.getSql());
-            Assertions.assertTrue(result.getSql().equals(SQLUtils.parseSingleStatement(sqlTest.target(),sqlTest.db()).toString()),sqlTest.name());
+            String exceptResult = SQLUtils.parseSingleStatement(sqlTest.target(),sqlTest.db()).toString();
+            Assertions.assertEquals(result.getSql(),exceptResult);
         }
     }
 }

@@ -1,8 +1,8 @@
 package io.github.heykb.sqlhelper.spring.dynamicds;
 
-import io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDsManager;
-import io.github.heykb.sqlhelper.dynamicdatasource.LogicDsMeta;
 import io.github.heykb.sqlhelper.dynamicdatasource.DefaultSqlHelperDsManager;
+import io.github.heykb.sqlhelper.dynamicdatasource.LogicDsMeta;
+import io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDsManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 

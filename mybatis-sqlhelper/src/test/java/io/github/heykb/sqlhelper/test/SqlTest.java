@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.condition;
+package io.github.heykb.sqlhelper.test;
 
 import com.alibaba.druid.DbType;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;

@@ -40,7 +40,7 @@ public class Application implements CommandLineRunner {
     sqlHelperDsManager.put("mysql", LogicDsMeta.builder()
             .datasourceId("localhost:3306")
             .expectedSubspaceType(ConnectionSubspaceTypeEnum.DATABASE)
-            .createFunc(s->new PooledDataSource("com.mysql.cj.jdbc.Driver", "jdbc:mysql://localhost:3306/test", "root", "123456")).build());
+            .createFunc(()->new PooledDataSource("com.mysql.cj.jdbc.Driver", "jdbc:mysql://localhost:3306/test", "root", "123456")).build());
   }
 
   @Override

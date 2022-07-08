@@ -1,15 +1,20 @@
 package io.github.heykb.sqlhelper.spring;
 
 import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
+import io.github.heykb.sqlhelper.utils.CommonUtils;
 import org.springframework.util.AntPathMatcher;
 
 import java.util.List;
 
 public class PropertyLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
-    private static final AntPathMatcher antPathMatcher = new AntPathMatcher(".");
+    static final AntPathMatcher antPathMatcher = new AntPathMatcher(".");
     private String deleteSqlDemo = "UPDATE a SET is_deleted = 'Y'";
     private String columnName = "is_deleted";
     private String notDeletedValue = "'N'";
+
+    private List<String> mapperIds;
+
+    private List<String> tables;
 
     private List<String> ignoreMapperIds;
 
@@ -52,6 +57,22 @@ public class PropertyLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
         this.ignoreTables = ignoreTables;
     }
 
+    public List<String> getMapperIds() {
+        return mapperIds;
+    }
+
+    public void setMapperIds(List<String> mapperIds) {
+        this.mapperIds = mapperIds;
+    }
+
+    public List<String> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<String> tables) {
+        this.tables = tables;
+    }
+
     @Override
     public String getDeleteSqlDemo() {
         return this.deleteSqlDemo;
@@ -91,21 +112,43 @@ public class PropertyLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 
     @Override
     public boolean checkTableName(String tableName) {
-        if(ignoreTables==null || ignoreTables.isEmpty()){
-            return true;
+        if(tables!=null && !wildcardMatchAny(this.tables,tableName)){
+            return false;
         }
-        return !ignoreTables.contains(tableName);
+        if(ignoreTables!=null && wildcardMatchAny(ignoreTables,tableName)){
+            return false;
+        }
+        return true;
     }
+
 
     @Override
     public boolean checkMapperId(String mapperId) {
-        if(ignoreMapperIds==null || ignoreMapperIds.isEmpty()){
-            return true;
+        if(mapperIds!=null && !pathMatchAny(this.mapperIds,mapperId)){
+            return false;
         }
-        for(String pattern:ignoreMapperIds){
-            if(antPathMatcher.match(pattern,mapperId)) {return false;}
+        if(ignoreMapperIds!=null && pathMatchAny(ignoreMapperIds,mapperId)){
+            return false;
         }
         return true;
+    }
+
+    boolean wildcardMatchAny(List<String> patterns,String target){
+        for(String pattern:patterns){
+            if(CommonUtils.wildcardMatch(pattern,target)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean pathMatchAny(List<String> patterns,String target){
+        for(String pattern:patterns){
+            if(antPathMatcher.match(pattern,target)){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

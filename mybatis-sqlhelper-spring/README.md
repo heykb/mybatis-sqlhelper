@@ -19,7 +19,7 @@
 <beans>
   <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
     <property name="dataSource" ref="dataSource"/>
-    <property name="mapperLocations" value="classpath:io/github/heykb/sqlhelper/spring/primary/dao/*.xml"/>
+    <property name="mapperLocations" value="classpath:io/github/heykb/sqlhelper/spring/test/dao/*.xml"/>
     <property name="plugins">
       <array>
         <ref bean="sqlHelperPlugin"></ref>

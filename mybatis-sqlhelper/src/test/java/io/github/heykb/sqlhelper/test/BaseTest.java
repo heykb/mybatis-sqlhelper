@@ -1,7 +1,6 @@
-package io.github.heykb.sqlhelper.condition;
+package io.github.heykb.sqlhelper.test;
 
 import com.google.common.collect.Sets;
-import io.github.heykb.sqlhelper.BaseUtils;
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
@@ -52,7 +51,7 @@ public class BaseTest {
 
     @Test
     void conditionInject() throws Exception {
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, Arrays.asList(new InjectColumnInfoHandler() {
                     @Override
                     public String getColumnName() {
@@ -99,7 +98,7 @@ public class BaseTest {
                        return INSERT;
                    }
                });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, injectColumnInfoHandlers,null);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -127,7 +126,7 @@ public class BaseTest {
                         return UPDATE;
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, injectColumnInfoHandlers,null);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -157,7 +156,7 @@ public class BaseTest {
                         return "'N'";
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, injectColumnInfoHandlers,null);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -183,7 +182,7 @@ public class BaseTest {
                         return "'new_tenant'";
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, injectColumnInfoHandlers,null);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -220,7 +219,7 @@ public class BaseTest {
                         return true;
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, null,columnFilterInfoHandlers);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -245,7 +244,7 @@ public class BaseTest {
                         return true;
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, null,columnFilterInfoHandlers);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -271,7 +270,7 @@ public class BaseTest {
                         return true;
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, null,columnFilterInfoHandlers);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
@@ -300,13 +299,44 @@ public class BaseTest {
                         return commandType == SqlCommandType.UPDATE;
                     }
                 });
-        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/condition/baseTest.sql",
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 TestMapper.class, null,columnFilterInfoHandlers);
         try(SqlSession sqlSession =sqlSessionFactory.openSession()){
             TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
             testMapper.update("1","newName");
             List<Map> re = testMapper.selectByName("newName");
             Assertions.assertTrue(re.size()==0);
+        }
+    }
+
+    @Test
+    void cacheTest() throws Exception {
+        SqlSessionFactory sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSource, "io/github/heykb/sqlhelper/test/baseTest.sql",
+                TestMapper.class, Arrays.asList(new InjectColumnInfoHandler() {
+                    @Override
+                    public String getColumnName() {
+                        return "age";
+                    }
+
+                    @Override
+                    public String getValue() {
+                        return "18";
+                    }
+
+                    @Override
+                    public String op() {
+                        return ">";
+                    }
+
+                    @Override
+                    public int getInjectTypes() {
+                        return CONDITION;
+                    }
+                }),null);
+        try(SqlSession sqlSession =sqlSessionFactory.openSession()){
+            TestMapper testMapper = sqlSession.getMapper(TestMapper.class);
+            List<Map> result =  testMapper.select();
+            result =  testMapper.select();
         }
     }
 

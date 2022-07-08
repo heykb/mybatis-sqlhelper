@@ -193,7 +193,12 @@ public class SqlHelperPlugin implements Interceptor {
     }
 
     MappedStatement newMappedStatement(MappedStatement source, BoundSql boundSql) {
-        MappedStatement.Builder builder = new MappedStatement.Builder(source.getConfiguration(), source.getId(), new SqlSource() {
+        String newId = source.getId();
+//        if(SqlHelperDsContextHolder.get()!=null){
+//            // 切换数据源后让缓存失效
+//            newId = SqlHelperDsContextHolder.get()+"."+source.getId();
+//        }
+        MappedStatement.Builder builder = new MappedStatement.Builder(source.getConfiguration(), newId, new SqlSource() {
             @Override
             public BoundSql getBoundSql(Object parameterObject) {
                 return boundSql;

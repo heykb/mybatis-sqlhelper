@@ -1,15 +1,113 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tests>
 
-    <test type="condition" name="select unix_timestamp" column="tenant_id" value="1" db="mysql">
+    <logicDeleteTest name="多表logicDelete" deleteSqlDemo="update xx set is_deleted=true"
+                     notDeletedValue="false" column="is_deleted" db="mysql">
+        <origin>
+            delete mv
+            from mv
+            left join track
+            on mv.mvid=track.trkid
+            where track.trkid is null
+        </origin>
+        <target>
+            UPDATE mv
+            LEFT JOIN track
+            ON mv.mvid = track.trkid
+            AND track.is_deleted = false
+            SET mv.is_deleted = true
+            WHERE track.trkid IS NULL
+            AND mv.is_deleted = false
+        </target>
+    </logicDeleteTest>
+    <logicDeleteTest name="别名简单logicDelete" deleteSqlDemo="update xx set is_deleted=true"
+                     notDeletedValue="false" column="is_deleted" db="mysql">
+        <origin>
+            delete
+            from mv s
+            where s.trkid is null
+        </origin>
+        <target>
+            UPDATE mv s
+            SET s.is_deleted = true
+            WHERE s.trkid IS NULL
+            AND s.is_deleted = false
+        </target>
+    </logicDeleteTest>
+    <logicDeleteTest name="无别名简单logicDelete" deleteSqlDemo="update xx set is_deleted=true"
+                     notDeletedValue="false" column="is_deleted" db="mysql">
+        <origin>
+            delete
+            from mv
+            where trkid is null
+        </origin>
+        <target>
+            UPDATE mv
+            SET is_deleted = true
+            WHERE trkid IS NULL
+            AND mv.is_deleted = false
+        </target>
+    </logicDeleteTest>
+
+    <injectTest type="condition,update" name="update 不明set Item(替换set Item)" column="tenant_id" value="1" db="postgresql">
+        <origin>
+            UPDATE tb t
+            set tenant_id=m._seqnum
+            FROM(
+            select m.idFieldName,row_number() over (order by m.sortSnFieldName,m.updatedTimeFieldName) as _seqnum
+            from tb m
+            where m.parentIdFieldName is null) m
+            where t.idFieldName = m.idFieldName
+        </origin>
+        <target>
+            UPDATE tb t
+            SET tenant_id = 1
+            FROM (
+            (SELECT m.idFieldName, row_number() OVER (ORDER BY m.sortSnFieldName, m.updatedTimeFieldName) AS _seqnum
+            FROM tb m
+            WHERE m.parentIdFieldName IS NULL
+            AND m.tenant_id = 1)
+            ) m
+            WHERE t.idFieldName = m.idFieldName
+            AND t.tenant_id = 1
+        </target>
+    </injectTest>
+
+    
+    <injectTest type="condition,update" name="update 不明set Item" column="tenant_id" value="1" db="postgresql">
+        <origin>
+            UPDATE tb t
+            set sort_sn=m._seqnum
+            FROM(
+                select m.id,
+                row_number() over (order by m.sort_sn,m.updated_time desc) as _seqnum
+                FROM "tb" m
+                WHERE m.parent is null
+            ) m
+            WHERE t.id = m.id
+        </origin>
+        <target>
+            UPDATE tb t
+            SET sort_sn = m._seqnum, tenant_id = 1
+            FROM (
+            (SELECT m.id, row_number() OVER (ORDER BY m.sort_sn, m.updated_time DESC) AS _seqnum
+            FROM "tb" m
+            WHERE m.parent IS NULL
+            AND m.tenant_id = 1)
+            ) m
+            WHERE t.id = m.id
+            AND t.tenant_id = 1
+        </target>
+    </injectTest>
+    <injectTest type="condition" name="select unix_timestamp" column="tenant_id" value="1" db="mysql">
         <origin>
             select unix_timestamp(current_timestamp()) * 1000 as c_timestamp
         </origin>
         <target>
             null
         </target>
-    </test>
-    <test type="condition" name="多表Delete4" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition" name="多表Delete4" column="tenant_id" value="1" db="mysql">
         <origin>
             delete from mv
             using mv
@@ -24,8 +122,8 @@
             on mv.mvid=track.trkid  and track.tenant_id=1
             where track.trkid is null and mv.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Delete3" column="tenant_id" value="1" db="sqlserver">
+    </injectTest>
+    <injectTest type="condition" name="多表Delete3" column="tenant_id" value="1" db="sqlserver">
         <origin>
             delete mv
             from mv
@@ -40,8 +138,8 @@
             on mv.mvid=track.trkid and track.tenant_id=1
             where track.trkid is null and mv.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Delete2" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition" name="多表Delete2" column="tenant_id" value="1" db="mysql">
         <origin>
             delete from mv
             using mv,track
@@ -52,8 +150,8 @@
             using mv,track
             where track.trkid=mv.mvid and mv.tenant_id=1 and track.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Delete1" column="tenant_id" value="1" db="sqlserver">
+    </injectTest>
+    <injectTest type="condition" name="多表Delete1" column="tenant_id" value="1" db="sqlserver">
         <origin>
             delete mv
             from mv,track
@@ -64,8 +162,8 @@
             from mv,track
             where track.trkid=mv.mvid and mv.tenant_id=1 and track.tenant_id=1
         </target>
-    </test>
-    <test type="condition,update" name="多表Update5" column="tenant_id" value="1" db="sqlserver">
+    </injectTest>
+    <injectTest type="condition,update" name="多表Update6" column="tenant_id" value="1" db="sqlserver">
         <origin>
             update s,c set s.class_name='test00',c.stu_name='test00'
             from student s,class c  where s.class_id = c.id
@@ -74,8 +172,8 @@
             update s,c set s.class_name='test00',c.stu_name='test00',s.tenant_id=1,c.tenant_id=1
             from student s,class c  where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Update4" column="tenant_id" value="1" db="sqlserver">
+    </injectTest>
+    <injectTest type="condition" name="多表Update5" column="tenant_id" value="1" db="sqlserver">
         <origin>
             update s,c set s.class_name='test00',c.stu_name='test00'
             from student s,class c  where s.class_id = c.id
@@ -84,8 +182,8 @@
             update s,c set s.class_name='test00',c.stu_name='test00'
             from student s,class c  where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Update3" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition" name="多表Update4" column="tenant_id" value="1" db="oracle">
         <origin>
             update student s,class c
             set s.class_name='test00',c.stu_name='test00' where s.class_id = c.id
@@ -94,16 +192,16 @@
             update student s,class c
             set s.class_name='test00',c.stu_name='test00' where s.class_id = c.id and s.tenant_id=1 And c.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Update3" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition" name="多表Update3" column="tenant_id" value="1" db="oracle">
         <origin>
             update student s join class c on s.class_id = c.id set s.class_name='test11'
         </origin>
         <target>
             update student s join class c on s.class_id = c.id set s.class_name='test11' WHERE s.tenant_id=1 And c.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Update2" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition" name="多表Update2" column="tenant_id" value="1" db="oracle">
         <origin>
             UPDATE student s LEFT JOIN class c ON s.class_id = c.id
             SET s.class_name='test22',c.stu_name='test22'
@@ -112,8 +210,8 @@
             UPDATE student s LEFT JOIN class c ON s.class_id = c.id and c.tenant_id=1
             SET s.class_name='test22',c.stu_name='test22' WHERE s.tenant_id=1
         </target>
-    </test>
-    <test type="condition" name="多表Update1" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition" name="多表Update1" column="tenant_id" value="1" db="oracle">
         <origin>
             update student left join class on student.class_id = class.id
             set student.class_name='test22',class.stu_name='test22'
@@ -122,8 +220,8 @@
             update student left join class on student.class_id = class.id and class.tenant_id=1
             set student.class_name='test22',class.stu_name='test22' where student.tenant_id=1
         </target>
-    </test>
-    <test type="condition,insert" name="多表Insert first when" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition,insert" name="多表Insert first when" column="tenant_id" value="1" db="oracle">
         <origin>
             INSERT FIRST
             when object_id > 5 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, 'IBM')
@@ -138,8 +236,8 @@
             else INTO customers (customer_id, customer_name, city,tenant_id) VALUES (999999, 'Anderson Construction', 'New York',1)
             SELECT object_id FROM t WHERE t.tenant_id = 1;
         </target>
-    </test>
-    <test type="condition,insert" name="多表Insert all when" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition,insert" name="多表Insert all when" column="tenant_id" value="1" db="oracle">
         <origin>
             INSERT ALL
             when object_id > 5 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, 'IBM')
@@ -154,8 +252,8 @@
             else INTO customers (customer_id, customer_name, city,tenant_id) VALUES (999999, 'Anderson Construction', 'New York',1)
             SELECT object_id FROM t WHERE t.tenant_id = 1;
         </target>
-    </test>
-    <test type="condition,insert" name="多表Insert all" column="tenant_id" value="1" db="oracle">
+    </injectTest>
+    <injectTest type="condition,insert" name="多表Insert all" column="tenant_id" value="1" db="oracle">
         <origin>
             INSERT ALL
             INTO suppliers (supplier_id, supplier_name) VALUES (1000, 'IBM')
@@ -170,8 +268,8 @@
             INTO suppliers (supplier_id, supplier_name,tenant_id) VALUES (3000, 'Google',1)
             SELECT * FROM dual WHERE dual.tenant_id = 1;
         </target>
-    </test>
-    <test type="condition"  name="qq用户（732811911）提交" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="qq用户（732811911）提交" column="tenant_id" value="1" db="mysql">
         <origin>
             UPDATE chart_view cv,
             chart_view_cache cve
@@ -190,8 +288,8 @@
             AND cv.tenant_id = 1
             AND cve.tenant_id = 1
         </target>
-    </test>
-    <test type="condition,update"  name="更新语句set value中的查询" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition,update"  name="更新语句set value中的查询" column="tenant_id" value="1" db="mysql">
         <origin>
             UPDATE Persons
             SET  PersonCityName=(SELECT AddressList.PostCode
@@ -206,8 +304,8 @@
                 tenant_id=1
             WHERE Persons.tenant_id = 1
         </target>
-    </test>
-    <test type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
         <origin>
             INSERT INTO Customers (CustomerName, City, Country)
             SELECT SupplierName, City, Country FROM Suppliers s
@@ -216,8 +314,8 @@
             INSERT INTO Customers (CustomerName, City, Country)
             SELECT SupplierName, City, Country FROM Suppliers s WHERE s.tenant_id = 1
         </target>
-    </test>
-    <test type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="queryInInsert" column="tenant_id" value="1" db="mysql">
         <origin>
             INSERT INTO Customers (CustomerName, City, Country)
             SELECT SupplierName, City, Country FROM Suppliers
@@ -226,46 +324,46 @@
             INSERT INTO Customers (CustomerName, City, Country)
             SELECT SupplierName, City, Country FROM Suppliers WHERE Suppliers.tenant_id = 1
         </target>
-    </test>
-    <test type="condition"  name="selectTest" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="selectTest" column="tenant_id" value="1" db="mysql">
         <origin>
             select * from people
         </origin>
         <target>
             select * from people where people.tenant_id=1
         </target>
-    </test>
-    <test type="condition"  name="leftJoinTest" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="leftJoinTest" column="tenant_id" value="1" db="mysql">
        <origin>
            select p.* from people p left join dept d on p.dept_id = d.dept_id
        </origin>
        <target>
            select p.* from people p left join dept d on p.dept_id = d.dept_id and d.tenant_id=1 where p.tenant_id=1
        </target>
-    </test>
-    <test type="condition"  name="rightJoinTest" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="rightJoinTest" column="tenant_id" value="1" db="mysql">
         <origin>
             select p.* from people p right join dept d on p.dept_id = d.dept_id
         </origin>
         <target>
             select p.* from people p right join dept d on p.dept_id = d.dept_id and p.tenant_id=1 where d.tenant_id=1
         </target>
-    </test>
-    <test type="condition"  name="innerJoinTest" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="innerJoinTest" column="tenant_id" value="1" db="mysql">
         <origin>
             select p.* from people p join dept d on p.dept_id = d.dept_id
         </origin>
         <target>
             select p.* from people p join dept d on p.dept_id = d.dept_id  where  p.tenant_id=1 and d.tenant_id=1
         </target>
-    </test>
-    <test type="condition"  name="outerJoinTest" column="tenant_id" value="1" db="mysql">
+    </injectTest>
+    <injectTest type="condition"  name="outerJoinTest" column="tenant_id" value="1" db="mysql">
         <origin>
             select p.* from people p full join dept d on p.dept_id = d.dept_id
         </origin>
         <target>
             select p.* from people p full join dept d on p.dept_id = d.dept_id and p.tenant_id=1 and d.tenant_id=1
         </target>
-    </test>
+    </injectTest>
 
 </tests>

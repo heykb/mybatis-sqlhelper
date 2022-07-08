@@ -1,4 +1,4 @@
-package io.github.heykb.sqlhelper.spring.primary.domain;
+package io.github.heykb.sqlhelper.spring.test.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

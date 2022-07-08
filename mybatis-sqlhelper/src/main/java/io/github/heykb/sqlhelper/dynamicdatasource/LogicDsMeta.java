@@ -4,7 +4,7 @@ import io.github.heykb.sqlhelper.utils.Asserts;
 import lombok.Data;
 
 import javax.sql.DataSource;
-import java.util.function.Function;
+import java.util.concurrent.Callable;
 
 /**
  * The type Logic ds meta.
@@ -31,7 +31,7 @@ public class LogicDsMeta {
     /**
      * 当数据源id不存在时，使用此回调创建新的数据源
      */
-    private Function<Void, DataSource> createFunc;
+    private Callable<DataSource> createFunc;
 
     private LogicDsMeta() {
     }
@@ -53,7 +53,8 @@ public class LogicDsMeta {
         private ConnectionSubspaceTypeEnum expectedSubspaceType;
         private String subspace;
         private String table_prefix;
-        private Function<Void, DataSource> createFunc;
+
+        private Callable<DataSource> createFunc;
 
         private LogicDsMetaBuilder() {
         }
@@ -119,7 +120,7 @@ public class LogicDsMeta {
          * @param createFunc the create func
          * @return the logic ds meta builder
          */
-        public LogicDsMetaBuilder createFunc(Function<Void, DataSource> createFunc) {
+        public LogicDsMetaBuilder createFunc(Callable<DataSource> createFunc) {
             this.createFunc = createFunc;
             return this;
         }

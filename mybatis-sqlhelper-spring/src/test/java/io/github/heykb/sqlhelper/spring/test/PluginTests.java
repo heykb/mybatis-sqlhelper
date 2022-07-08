@@ -1,12 +1,10 @@
-package io.github.heykb.sqlhelper.spring.primary;
+package io.github.heykb.sqlhelper.spring.test;
 
 import io.github.heykb.sqlhelper.config.SqlHelperException;
-import io.github.heykb.sqlhelper.dynamicdatasource.LogicDsMeta;
 import io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDsManager;
-import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
-import io.github.heykb.sqlhelper.spring.primary.dao.EmployeeMapper;
-import io.github.heykb.sqlhelper.spring.primary.dao.PeopleMapper;
-import io.github.heykb.sqlhelper.spring.primary.domain.People;
+import io.github.heykb.sqlhelper.spring.test.dao.EmployeeMapper;
+import io.github.heykb.sqlhelper.spring.test.dao.PeopleMapper;
+import io.github.heykb.sqlhelper.spring.test.domain.People;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.jupiter.api.Assertions;
@@ -22,7 +20,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig(locations = "classpath:io/github/heykb/sqlhelper/spring/primary/applicationContext.xml")
+@SpringJUnitConfig(locations = "classpath:io/github/heykb/sqlhelper/spring/test/applicationContext.xml")
 public class PluginTests {
     private Logger LOG = LoggerFactory.getLogger(this.getClass());
     @Autowired

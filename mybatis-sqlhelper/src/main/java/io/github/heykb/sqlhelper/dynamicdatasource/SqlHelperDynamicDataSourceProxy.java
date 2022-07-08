@@ -38,10 +38,10 @@ public class SqlHelperDynamicDataSourceProxy extends SimpleProxyDatasource {
     public Connection getConnection() throws SQLException {
         String switchedDsName = SqlHelperDsContextHolder.get();
         if (switchedDsName == null) {
-            log.warn(Thread.currentThread().getName() + "线程使用主数据源");
+            log.debug(Thread.currentThread().getName() + "线程使用主数据源");
             return sqlHelperDsManager.getPrimaryDs().getConnection();
         }
-        log.warn(Thread.currentThread().getName() + "线程使用"+switchedDsName+"数据源");
+        log.debug(Thread.currentThread().getName() + "线程使用"+switchedDsName+"数据源");
         LogicDsMeta logicDsMeta = sqlHelperDsManager.getByLogicName(switchedDsName);
         DataSource dataSource = sqlHelperDsManager.getByDatasourceId(logicDsMeta.getDatasourceId());
         Connection connection = dataSource.getConnection();

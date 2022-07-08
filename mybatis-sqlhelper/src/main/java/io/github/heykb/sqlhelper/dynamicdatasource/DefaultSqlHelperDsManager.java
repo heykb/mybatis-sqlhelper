@@ -76,7 +76,11 @@ public class DefaultSqlHelperDsManager implements SqlHelperDsManager {
                 throw new SqlHelperException("缺少createFunc数据源创建方法，无法初始化" + dsMeta.getDatasourceId() + "数据源");
             }
             log.warn("为逻辑数据源 " + logicName + " 初始化新的数据源 " + dsMeta.getDatasourceId());
-            newDatasource = dsMeta.getCreateFunc().apply(null);
+            try{
+                newDatasource = dsMeta.getCreateFunc().call();
+            }catch (Exception e){
+                new SqlHelperException("初始化"+logicName+"数据源失败",e);
+            }
             if(dsMeta.getSubspace()==null){
                 try(Connection connection = newDatasource.getConnection()){
                     log.warn("逻辑数据源"+logicName+"未设置subspace尝试从连接中获取");

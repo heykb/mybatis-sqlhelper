@@ -9,9 +9,17 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 /**
+ * The type Common utils.
+ *
  * @author heykb
  */
 public class CommonUtils {
+    /**
+     * Convert sql binary operator.
+     *
+     * @param op the op
+     * @return the sql binary operator
+     */
     public static SQLBinaryOperator convert(String op){
         for (SQLBinaryOperator item:SQLBinaryOperator.values()){
             if(item.getName().equalsIgnoreCase(op.trim())){
@@ -20,6 +28,13 @@ public class CommonUtils {
         }
         throw new IllegalArgumentException(String.format("暂不支持%s操作",op));
     }
+
+    /**
+     * Is primitive or wrap boolean.
+     *
+     * @param clazz the clazz
+     * @return the boolean
+     */
     public static boolean isPrimitiveOrWrap(Class clazz){
         try{
             return clazz.isPrimitive() || ((Class)clazz.getField("TYPE").get(null)).isPrimitive();
@@ -29,6 +44,14 @@ public class CommonUtils {
 
     }
 
+    /**
+     * Adapte property name string.
+     *
+     * @param originName                 the origin name
+     * @param columnAliasMap             the column alias map
+     * @param isMapUnderscoreToCamelCase the is map underscore to camel case
+     * @return the string
+     */
     public static String adaptePropertyName(String originName, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase) {
         String re = originName;
         if (originName != null) {
@@ -45,6 +68,15 @@ public class CommonUtils {
         return re;
     }
 
+    /**
+     * Gets instance by class name.
+     *
+     * @param classNames the class names
+     * @return the instance by class name
+     * @throws ClassNotFoundException the class not found exception
+     * @throws IllegalAccessException the illegal access exception
+     * @throws InstantiationException the instantiation exception
+     */
     public static List  getInstanceByClassName(String[] classNames) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         List re = new ArrayList();
         if(classNames == null || classNames.length==0){
@@ -59,6 +91,13 @@ public class CommonUtils {
     }
 
 
+    /**
+     * Filter columns.
+     *
+     * @param o                          the o
+     * @param ignoreColumns              the ignore columns
+     * @param isMapUnderscoreToCamelCase the is map underscore to camel case
+     */
     public static void filterColumns(Object o, Set<String> ignoreColumns, boolean isMapUnderscoreToCamelCase) {
         if (o == null || CollectionUtils.isEmpty(ignoreColumns)) {
             return;
@@ -120,7 +159,54 @@ public class CommonUtils {
     }
 
 
+    /**
+     * Is empty boolean.
+     *
+     * @param str the str
+     * @return the boolean
+     */
     public static boolean isEmpty(String str) {
         return (str == null || str.length() == 0);
     }
+
+
+    /**
+     * 字符串通配符匹配：支持？ *
+     *
+     * @param pattern the pattern 通配符
+     * @param str     the str 被匹配字符串
+     * @return the boolean
+     */
+    public static boolean wildcardMatch(String pattern,String str){
+        int m = pattern.length();
+        int n = str.length();
+        boolean[][] dp = new boolean[m+1][n+1];
+        dp[0][0] = true;
+        for(int i=0;i<pattern.length();++i){
+            if(pattern.charAt(i)=='*'){
+                dp[i+1][0] = true;
+            }else{
+                break;
+            }
+        }
+        for(int i=0;i<m;++i){
+            for(int j=0;j<n;++j){
+                char p = pattern.charAt(i);
+                char ch = str.charAt(j);
+                if(p=='*'){
+                    // 使用*消耗掉ch->i,j；不使用*消耗掉ch->i,j+1 ；使用*消耗掉ch,但是*是二次使用ch->i+1,j
+                    dp[i+1][j+1] = dp[i][j+1] || dp[i][j] || dp[i+1][j];
+                }else{
+                    if(p=='?' || ch==p){
+                        dp[i+1][j+1] = dp[i][j];
+                    }else{
+                        dp[i+1][j+1] = false;
+                    }
+                }
+            }
+        }
+        return dp[m][n];
+    }
+
+
 }

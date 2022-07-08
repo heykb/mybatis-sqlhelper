@@ -5,10 +5,6 @@ import org.apache.ibatis.cursor.Cursor;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
 
 public class SimpleProxyCursor<T> implements Cursor<T> {
 
