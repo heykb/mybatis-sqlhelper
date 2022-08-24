@@ -8,7 +8,7 @@
 <dependency>
     <groupId>io.github.heykb</groupId>
     <artifactId>mybatis-sqlhelper-spring-boot-starter</artifactId>
-    <version>${version}</version>
+    <version>3.0.0.SR1</version>
 </dependency>
 ~~~
 
