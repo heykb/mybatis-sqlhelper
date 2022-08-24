@@ -221,6 +221,7 @@ public class SqlStatementEditor {
             }
             return processing((OracleMultiInsertStatement) sqlStatement);
         }
+        conditionAddedMap = new LinkedHashMap<>();
         return new Result(sqlStatement.toString(),null);
     }
 

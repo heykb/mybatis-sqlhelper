@@ -51,7 +51,7 @@
 
 ### [查看博客戳这里 👆](https://heykb.github.io)
    
-## 建议直接使用spring-boot版本[MyBatis SqlHelper Spring Boot](https://github.com/heykb/mybatis-sqlhelper-spring-boot)
+## 建议直接使用spring-boot版本[MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
 
 ## 在mybatis.xml中配置插件
 ~~~xml

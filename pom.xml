@@ -38,7 +38,7 @@
     </modules>
 
     <properties>
-        <revision>3.0.0.SR1-SNAPSHOT</revision>
+        <revision>3.0.0.SR1</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
