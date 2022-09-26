@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.github.heykb</groupId>
-        <artifactId>mybatis-sqlHelper-parent</artifactId>
+        <artifactId>mybatis-sqlhelper-parent</artifactId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mybatis-sqlHelper-spring</artifactId>
+    <artifactId>mybatis-sqlhelper-spring</artifactId>
 
     <name>MyBatis SqlHelper Spring</name>
     <description>MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper Spring版本</description>
@@ -21,7 +21,7 @@
         <!-- Compile dependencies -->
         <dependency>
             <groupId>io.github.heykb</groupId>
-            <artifactId>mybatis-sqlHelper</artifactId>
+            <artifactId>mybatis-sqlhelper</artifactId>
             <version>${project.version}</version>
         </dependency>
 

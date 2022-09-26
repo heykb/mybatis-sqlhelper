@@ -16,4 +16,6 @@ public interface SqlHelperDsManager {
      * @return 当对应的数据源id没有被其他逻辑数据源引用时，从管理中删除的Datasource对象。否则返回null
      */
     DataSource remove(String logicName);
+
+    boolean contains(String logicName);
 }

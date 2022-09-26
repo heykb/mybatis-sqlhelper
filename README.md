@@ -62,7 +62,15 @@
     </plugin>
   </plugins>
  </configuration>
+ 
 ~~~
+## 使用数据权限
+[数据权限专篇](./README_DATA_PERMISSION.md)
+
+## 使用多数据源
+[多数据源专篇](./DYNAMIC_DATASOURCE_README.md)
+
+## 使用sql自动注入功能（多租户）
 可用的属性
 
 | 名称                         | 类型                           | 默认 | 描述                                                             | demo         |
@@ -329,11 +337,6 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 ### 3.观察日志。
 物理删除语句已经被自动转换成更新语句，并且保留了所有where条件
 
-## 使用数据权限
-[数据权限专篇](./README_DATA_PERMISSION.md)
-
-## 使用多数据源
-[多数据源专篇](https://github.com/heykb/mybatis-sqlhelper-spring/blob/main/DYNAMIC_DATASOURCE_README.md)
 
 
 
@@ -347,4 +350,4 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 
 ## 联系我
 QQ: 1259609102<br>
-email: bigsheller08@gmail.com,1259609102@qq.com
+email: 1259609102@qq.com,bigsheller08@gmail.com

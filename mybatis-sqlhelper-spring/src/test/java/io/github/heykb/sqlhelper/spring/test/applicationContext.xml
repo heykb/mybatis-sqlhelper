@@ -16,11 +16,11 @@
     <property name="mapperLocations" value="classpath:io/github/heykb/sqlhelper/spring/test/dao/*.xml"/>
     <property name="plugins">
       <array>
-        <ref bean="sqlHelperPlugin"></ref>
+        <ref bean="sqlhelperPlugin"></ref>
       </array>
     </property>
   </bean>
-  <bean id="sqlHelperPlugin" class="io.github.heykb.sqlhelper.spring.SqlHelperPluginFactoryBean">
+  <bean id="sqlhelperPlugin" class="io.github.heykb.sqlhelper.spring.SqlHelperPluginFactoryBean">
     <property name="properties">
       <props>
         <prop key="enable">true</prop>
@@ -56,6 +56,6 @@
     </property>
   </bean>
   <bean id="simpleTenantInfoHandler" class="io.github.heykb.sqlhelper.spring.test.handlers.SimpleTenantInfoHandler"></bean>
-  <bean id="sqlHelperDsManager" class = "io.github.heykb.sqlhelper.spring.dynamicds.SpringSqlHelperDsManager"></bean>
+  <bean id="sqlhelperDsManager" class = "io.github.heykb.sqlhelper.spring.dynamicds.SpringSqlHelperDsManager"></bean>
 
 </beans>

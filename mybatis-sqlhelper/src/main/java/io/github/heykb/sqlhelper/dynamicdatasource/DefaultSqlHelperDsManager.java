@@ -120,6 +120,11 @@ public class DefaultSqlHelperDsManager implements SqlHelperDsManager {
         return null;
     }
 
+    @Override
+    public boolean contains(String logicName) {
+        return logicDsName2DsMeta.containsKey(logicName);
+    }
+
 
     /**
      * Gets by datasource id.

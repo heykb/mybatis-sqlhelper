@@ -67,7 +67,7 @@
 ~~~
 
 ## 使用多数据源
-[多数据源专篇](./DYNAMIC_DATASOURCE_README.md)
+[多数据源专篇](../DYNAMIC_DATASOURCE_README.md)
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)
  
 ## 参与贡献
@@ -78,4 +78,4 @@
 
 ## 联系我
 QQ: 1259609102<br>
-email: bigsheller08@gmail.com,1259609102@qq.com
+email: 1259609102@qq.com,bigsheller08@gmail.com

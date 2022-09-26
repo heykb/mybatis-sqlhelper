@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>io.github.heykb</groupId>
-        <artifactId>mybatis-sqlHelper-parent</artifactId>
+        <artifactId>mybatis-sqlhelper-parent</artifactId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mybatis-sqlHelper-spring-boot</artifactId>
+    <artifactId>mybatis-sqlhelper-spring-boot</artifactId>
     <packaging>pom</packaging>
     <modules>
         <module>mybatis-sqlhelper-spring-boot-starter</module>
@@ -44,7 +44,7 @@
             </dependency>
             <dependency>
                 <groupId>io.github.heykb</groupId>
-                <artifactId>mybatis-sqlHelper-spring</artifactId>
+                <artifactId>mybatis-sqlhelper-spring</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

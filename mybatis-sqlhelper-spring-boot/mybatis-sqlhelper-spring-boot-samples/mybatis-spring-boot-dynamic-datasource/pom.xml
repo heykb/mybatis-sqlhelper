@@ -8,7 +8,7 @@
   </parent>
   <artifactId>mybatis-spring-boot-dynamic-datasource</artifactId>
   <packaging>jar</packaging>
-  <name>mybatis-spring-boot-sample-xml</name>
+  <name>mybatis-spring-boot-dynamic-datasource</name>
 
   <dependencies>
     <dependency>

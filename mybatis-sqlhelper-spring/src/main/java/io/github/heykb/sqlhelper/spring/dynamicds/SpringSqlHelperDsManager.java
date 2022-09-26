@@ -34,4 +34,9 @@ public class SpringSqlHelperDsManager implements BeanPostProcessor, SqlHelperDsM
     public DataSource remove(String logicName) {
         return sqlHelperDsManager.remove(logicName);
     }
+
+    @Override
+    public boolean contains(String logicName) {
+        return sqlHelperDsManager.contains(logicName);
+    }
 }
