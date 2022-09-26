@@ -61,6 +61,12 @@ SqlHelperDsContextHolder.clear();
 
 // 切换到主数据源
 SqlHelperDsContextHolder.switchTo(null)
+
+// 切换到指定数据源下运行，完毕后自动切换回来
+SqlHelperDsContextHolder.executeOn("mysql",()->{
+    // 执行逻辑
+    return xxx;
+})
 ~~~
 
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)
