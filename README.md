@@ -49,7 +49,7 @@
 1. [MyBatis SqlHelper Spring](./mybatis-sqlhelper-spring/README.md)
 2. [MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
 
-### [查看博客戳这里 👆](https://heykb.github.io)
+### [查看博客戳这里 👆](https://heykb.github.io)  [备用 👆](https://heykb-github-io.vercel.app/)  
    
 ## 建议直接使用spring-boot版本[MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
 
