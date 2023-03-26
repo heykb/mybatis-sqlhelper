@@ -11,28 +11,6 @@
         <version>${project.version}</version>
     </dependency>
 ~~~
-## 使用快照版本(及时bug修复版本)
-~~~xml
-<dependency>
-    <groupId>io.github.heykb</groupId>
-    <artifactId>mybatis-sqlHelper</artifactId>
-    <version>3.0.0.SR1-SNAPSHOT</version>
-</dependency>
-
-<repositories>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
-~~~
 ## 特点
 * 可实现多租户
 * 可实现真实删除转逻辑删除
@@ -44,6 +22,7 @@
 * 将多租户、逻辑删除与应用程序解耦，随配随用
 * 强大的字段自动注入能力（<i>查询条件注入/插入语句注入/更新语句注入/查询列过滤</i>），定制其他业务逻辑
 * 支持多种数据库（基于阿里 druid sql解析器）
+* 超简单即可拥有多数据管理和切换
 
 ## spring 集成
 1. [MyBatis SqlHelper Spring](./mybatis-sqlhelper-spring/README.md)
