@@ -1,4 +1,4 @@
-# MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper(持续维护，放心使用)
+# MyBatis 多租户、逻辑删除、数据权限插件、多数据源-SqlHelper(持续维护，放心使用)
 
 [![Maven central](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper)
 
