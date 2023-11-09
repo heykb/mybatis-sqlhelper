@@ -1,5 +1,9 @@
 package io.github.heykb.sqlhelper.test;
 
+import com.alibaba.druid.DbType;
+import com.alibaba.druid.sql.SQLUtils;
+import com.alibaba.druid.sql.ast.SQLStatement;
+
 public class SqlInjectColunmnHelperTest {
     public static void main(String[] args) {
 //        String sql = "select concat(name ,id) as \"x\" ,\"name\",s.id_s from user s where u.name='123'";
@@ -94,11 +98,11 @@ public class SqlInjectColunmnHelperTest {
 //                "LEFT JOIN Track\n" +
 //                "ON MV.mvid=Track.trkid\n" +
 //                "WHERE Track.trkid IS NULL";
-        String sql = "DELETE FROM MV\n" +
-                "USING MV\n" +
-                "LEFT JOIN Track\n" +
-                "ON MV.mvid=Track.trkid\n" +
-                "WHERE Track.trkid IS NULL";
+//        String sql = "DELETE FROM MV\n" +
+//                "USING MV\n" +
+//                "LEFT JOIN Track\n" +
+//                "ON MV.mvid=Track.trkid\n" +
+//                "WHERE Track.trkid IS NULL";
 //        String sql = "UPDATE chart_view cv,\n" +
 //                "chart_view_cache cve \n" +
 //                "SET cv.` NAME ` = cve.` NAME `,\n" +
@@ -129,6 +133,8 @@ public class SqlInjectColunmnHelperTest {
 //        "when object_id < 10 then  INTO suppliers (supplier_id, supplier_name) VALUES (?, ?)\n" +
 //        " else INTO customers (customer_id, customer_name, city) VALUES (999999, 'Anderson Construction', 'New York')\n" +
 //        "SELECT object_id FROM t;";
+        String sql = "select * from p where a in (1,2,3) and x='x'";
+        SQLStatement sqlStatement = SQLUtils.parseSingleMysqlStatement(sql);
         System.out.println(sql);
 //        InjectColumnInfoHandler right = new InjectColumnInfoHandler() {
 //            @Override

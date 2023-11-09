@@ -4,6 +4,7 @@ package io.github.heykb.sqlhelper.dynamicdatasource;
 import io.github.heykb.sqlhelper.config.SqlHelperException;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public interface SqlHelperDsManager {
 
@@ -18,4 +19,18 @@ public interface SqlHelperDsManager {
     DataSource remove(String logicName);
 
     boolean contains(String logicName);
+
+    boolean containsId(String dsId);
+
+    DataSource getByName(String logicName);
+
+    DataSource getById(String dsId);
+
+
+    LogicDsMeta getLogicDsMeta(String switchedDsName);
+
+
+    List<String> all();
+
+    List<String> allDatasourceIds();
 }

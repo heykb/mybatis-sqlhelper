@@ -33,6 +33,7 @@ public class LogicDsMeta {
      */
     private Callable<DataSource> createFunc;
 
+
     private LogicDsMeta() {
     }
 
@@ -132,7 +133,6 @@ public class LogicDsMeta {
          */
         public LogicDsMeta build() {
             Asserts.notNull(datasourceId, "datasourceId");
-            Asserts.notNull(expectedSubspaceType, "expectedSubspaceType");
             LogicDsMeta logicDsMeta = new LogicDsMeta();
             logicDsMeta.setDatasourceId(datasourceId);
             logicDsMeta.setExpectedSubspaceType(expectedSubspaceType);

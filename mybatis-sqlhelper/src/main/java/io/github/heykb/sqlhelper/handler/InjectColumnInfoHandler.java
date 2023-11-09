@@ -3,9 +3,11 @@ package io.github.heykb.sqlhelper.handler;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
+import io.github.heykb.sqlhelper.utils.CommonUtils;
 import org.apache.ibatis.mapping.SqlCommandType;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -126,4 +128,15 @@ public interface InjectColumnInfoHandler {
         return sqlExpr;
     }
 
+
+    default SQLExpr toConditionSQLExpr(String tableAlias, DbType dbType, Map<String, String> columnAliasMap, boolean isMapUnderscoreToCamelCase){
+        if((getInjectTypes() & CONDITION)==0){
+            throw new UnsupportedOperationException("只有CONDITION注入支持该方法");
+        }
+        String columnName = CommonUtils.adaptePropertyName(getColumnName(), columnAliasMap, isMapUnderscoreToCamelCase);
+        String aliasFieldName = CommonUtils.isEmpty(tableAlias) ? columnName : tableAlias + "." + columnName;
+        StringBuilder conditionSql = new StringBuilder(aliasFieldName);
+        conditionSql.append(" ").append(op()).append(" ").append(getValue());
+        return SQLUtils.toSQLExpr(conditionSql.toString());
+    }
 }

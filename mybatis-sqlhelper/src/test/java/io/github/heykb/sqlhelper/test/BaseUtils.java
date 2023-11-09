@@ -63,6 +63,7 @@ public class BaseUtils {
                     return origin.getTextContent();
                 }
 
+
                 @Override
                 public String target() {
                     return target.getTextContent();
@@ -89,6 +90,12 @@ public class BaseUtils {
                         @Override
                         public String getValue() {
                             return node.getAttributes().getNamedItem("value").getNodeValue();
+                        }
+
+                        @Override
+                        public String op() {
+                            Node op = node.getAttributes().getNamedItem("op");
+                            return op!=null? op.getNodeValue():"=";
                         }
 
                         @Override

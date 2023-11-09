@@ -7,7 +7,7 @@
 ~~~xml
     <dependency>
         <groupId>io.github.heykb</groupId>
-        <artifactId>mybatis-sqlHelper</artifactId>
+        <artifactId>mybatis-sqlhelper-spring-boot-starter</artifactId>
         <version>${project.version}</version>
     </dependency>
 ~~~
@@ -15,12 +15,12 @@
 ~~~xml
 <dependency>
     <groupId>io.github.heykb</groupId>
-    <artifactId>mybatis-sqlHelper</artifactId>
-    <version>3.0.0.SR1-SNAPSHOT</version>
+    <artifactId>mybatis-sqlhelper-spring-boot-starter</artifactId>
+    <version>3.0.0.SR2-SNAPSHOT</version>
 </dependency>
 
 <repositories>
-        <repository>
+        <repository>    
             <id>sonatype-nexus-snapshots</id>
             <name>Sonatype Nexus Snapshots</name>
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
@@ -47,60 +47,25 @@
 
 ## spring 集成
 1. [MyBatis SqlHelper Spring](./mybatis-sqlhelper-spring/README.md)
-2. [MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
+2. [MyBatis SqlHelper Spring Boot](./README_SPRING_BOOT.md)
 
 ### [查看博客戳这里 👆](https://heykb.github.io)
-   
-## 建议直接使用spring-boot版本[MyBatis SqlHelper Spring Boot](./mybatis-sqlhelper-spring-boot/README.md)
 
-## 在mybatis.xml中配置插件
-~~~xml
-<configuration>
-  <plugins>
-    <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
-        <property...
-    </plugin>
-  </plugins>
- </configuration>
- 
-~~~
 ## 使用数据权限
 [数据权限专篇](./README_DATA_PERMISSION.md)
 
 ## 使用多数据源
 [多数据源专篇](./DYNAMIC_DATASOURCE_README.md)
-
-## 使用sql自动注入功能（多租户）
-可用的属性
-
-| 名称                         | 类型                           | 默认 | 描述                                                             | demo         |
-| ------------------------------ | -------------------------------- | ---- | ------------------------------------------------------------------ | ------------ |
-| enable                         | boolean                          | true | 用于设置功能的总开关。                                  | true         |
-| multi-tenant.enable            | boolean                          | true | 用于设置多租户功能开关。                               | true         |
-| logic-delete.enable            | boolean                          | true | 用于设置物理删除转逻辑删除功能开关。             | true         |
-| ~~dbType~~                        | String(com.alibaba.druid.DbType) |      | 用于设置数据库类型的参数名称，非特殊不用配置，支持自动获取 | mysql        |
-| InjectColumnInfoHandler        | String(逗号分割的字符串数组) |      | sql注入信息全限定类名数组。被用于反射生成注入信息对象 | com.xx,io.xx |
-| ColumnFilterInfoHandler        | String(逗号分割的字符串数组) |      | 数据权限中的字段过滤信息全限定类名数组。被用于反射生成注入信息对象 | com.xx,io.xx |
-| DynamicFindInjectInfoHandler   | String                           |      | 运行期间动态生成注入信息对象集合的全限定类名。 | com.xx       |
-| DynamicFindColumnFilterHandler | String                           |      | 运行期间动态生成字段过滤信息对象集合的全限定类名。 | com.xx       |
-
+## 注入示例
+[注入示例](./sql-demo.md)
 
 ## Mybatis-Sqlhelper使用自动注入
 ### 能帮你做什么？
     1. 多种类型的sql动态注入能力
-### 使用方式
-首先创建注入信息类，然后在xml中使用InjectColumnInfoHandler属性配置
-~~~xml
-<plugins>
-    <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
-      <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.primary.handlers.MyConditionInfoHandler"/>
-    </plugin>
-  </plugins>
-~~~
 ### CONDITION条件注入
 1. 单一条件注入， 创建类实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
 ~~~java
+@Component
 public class MyConditionInfoHandler implements InjectColumnInfoHandler {
     @Override
     public String getColumnName() {
@@ -132,63 +97,14 @@ public class MyConditionInfoHandler implements InjectColumnInfoHandler {
         return true;
     }
 }
-
-~~~
-##### 查询语句中： 
-~~~java 
-select * from user s
-~~~
-##### 输出：
-~~~sql
-SELECT * FROM user s WHERE s.tenant_id = 'sqlhelper'
-~~~
-##### 更新语句中： 
-~~~java 
-update user set name = ? where id = ?
-~~~
-##### 输出：
-~~~sql
-update user set name = ? where id = ? and user.tenant_id = 'sqlhelper'
-~~~
-##### 删除语句中： 
-~~~java 
-delete from user where id = ?
-~~~
-##### 输出：
-~~~sql
-delete from user where id = ? and user.tenant_id = 'sqlhelper'
-~~~
-##### 外连接语句中： 
-~~~java 
-SELECT * FROM user u left JOIN card c ON u.id = c.user_id
-~~~
-##### 输出：
-~~~sql
-SELECT *
-FROM user u
-	LEFT JOIN card c
-	ON u.id = c.user_id
-		AND c.tenant_id = sqlhelper
-WHERE u.tenant_id = sqlhelper
-~~~
-##### 各种子查询语句中： 
-~~~java 
-SELECT * FROM (select * from user where id = 2) s
-~~~
-##### 输出：
-~~~sql
-SELECT *
-FROM (
-	(SELECT *
-	FROM user
-	WHERE id = 2
-		AND user.tenant_id = sqlhelper)
-) s
 ~~~
 2. 多条件组合注入继承[BinaryConditionInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/BinaryConditionInjectInfoHandler.java)...
-### INSERT插入列注入
+
+
+### INSERT插入列注入  如自动插入租户id列
 1. 单一条件注入,实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
 ~~~java
+@Component
 public class MyInsertInfoHandler implements InjectColumnInfoHandler {
         
         @Override
@@ -197,7 +113,7 @@ public class MyInsertInfoHandler implements InjectColumnInfoHandler {
         }
         @Override
         public String getValue() {
-            return "sqlhelper";
+            return "'sqlhelper'";
         }
     
         @Override
@@ -213,64 +129,34 @@ public class MyInsertInfoHandler implements InjectColumnInfoHandler {
             return true;
         }
 };
-~~~
-#### 输入：
-~~~sql
-INSERT INTO user (id, name)
-VALUES ('0', 'heykb')
-~~~
-#### 输出：
-~~~sql
-INSERT INTO user (id, name, tenant_id)
-VALUES ('0', 'heykb', 'sqlhelper')
-~~~
-#### 输入：
-~~~sql
-INSERT INTO user (id, name)
-SELECT g.id, g.name
-FROM user_group g
-WHERE id = 1
-~~~
-#### 输出：
-~~~sql
-INSERT INTO user (id, name, tenant_id)
-SELECT g.id, g.name
-FROM user_group g
-WHERE id = 1
-~~~
-### UPDATE更新列注入...
+### UPDATE更新项注入...如自动更新updated_time列
 ~~~java
 @Override
 public int getInjectTypes() {
     return UPDATE;
 }
 ~~~
-### 多个
+
+### 同时多种类型注入
 ~~~java
 @Override
 public int getInjectTypes() {
     return UPDATE|INSERT|...;
 }
 ~~~
+## [查看更多测试示例](./sql-demo.md)
+
 
 ## Mybatis-Sqlhelper使用字段隔离的多租户（数据源隔离级别参考sqlhelper多数据源配置）
 ### 能帮你做什么？
     1. 自动为所有where 、join on添加租户过滤条件
     2. 自动为insert语句添加租户列的插入
     3. 多租户的实现也是利用sqlhelper的自动注入功能，相当于配置了CONDITIO与INSERT的两种注入
-### 准备 
-### 使用方式
-首先创建租户信息类，然后在xml中使用InjectColumnInfoHandler属性配置
-~~~xml
-<plugins>
-    <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
-      <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.primary.handlers.SimpleTenantInfoHandler"/>
-    </plugin>
-  </plugins>
+### 创建注入类 
 ~~~
 创建类继承[TenantInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/TenantInfoHandler.java)，如：
 ~~~java
+@Component
 public class SimpleTenantInfoHandler extends TenantInfoHandler {
 
     /**
@@ -299,20 +185,12 @@ public class SimpleTenantInfoHandler extends TenantInfoHandler {
 
 ## Mybatis-Sqlhelper使用物理删除切换逻辑删除
 ### 能帮你做什么？
-    1. 多种类型的sql动态注入能力
-### 使用方式
-首先创建逻辑删除信息类，然后在xml中使用InjectColumnInfoHandler属性配置
-~~~xml
-<plugins>
-    <plugin interceptor="io.github.heykb.sqlhelper.interceptor.SqlHelperPlugin">
-      <property name="InjectColumnInfoHandler"
-                value="io.github.heykb.sqlhelper.primary.handlers.SimpleLogicDeleteInfoHandler"/>
-    </plugin>
-  </plugins>
-~~~
+    1. 真实删除自动转逻辑删除
 创建类继承[LogicDeleteInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/LogicDeleteInfoHandler.java)
 ~~~java
+@Component
 public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
+    // 主要是为了从中提取SET is_deleted = 'Y'
     @Override
     public String getDeleteSqlDemo() {
         return "UPDATE xx SET is_deleted = 'Y'";
@@ -336,8 +214,6 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 ~~~
 ### 3.观察日志。
 物理删除语句已经被自动转换成更新语句，并且保留了所有where条件
-
-
 
 
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)

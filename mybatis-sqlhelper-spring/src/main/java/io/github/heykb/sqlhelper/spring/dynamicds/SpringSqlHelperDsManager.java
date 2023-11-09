@@ -7,9 +7,10 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public class SpringSqlHelperDsManager implements BeanPostProcessor, SqlHelperDsManager {
-    private DefaultSqlHelperDsManager sqlHelperDsManager;
+    private SqlHelperDsManager sqlHelperDsManager;
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if(bean instanceof DataSource){
@@ -17,8 +18,8 @@ public class SpringSqlHelperDsManager implements BeanPostProcessor, SqlHelperDsM
                 this.sqlHelperDsManager = ((SqlHelperDynamicDataSourceProxy)bean).getSqlHelperDsManager();
                 return bean;
             }else{
-                io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDynamicDataSourceProxy dataSource = new SqlHelperDynamicDataSourceProxy((DataSource) bean);
-                this.sqlHelperDsManager = dataSource.getSqlHelperDsManager();
+                this.sqlHelperDsManager = new DefaultSqlHelperDsManager((DataSource) bean);
+                io.github.heykb.sqlhelper.dynamicdatasource.SqlHelperDynamicDataSourceProxy dataSource = new SqlHelperDynamicDataSourceProxy(this.sqlHelperDsManager);
                 return dataSource;
             }
         }
@@ -38,5 +39,35 @@ public class SpringSqlHelperDsManager implements BeanPostProcessor, SqlHelperDsM
     @Override
     public boolean contains(String logicName) {
         return sqlHelperDsManager.contains(logicName);
+    }
+
+    @Override
+    public boolean containsId(String dsId) {
+        return sqlHelperDsManager.contains(dsId);
+    }
+
+    @Override
+    public DataSource getByName(String logicName) {
+        return sqlHelperDsManager.getByName(logicName);
+    }
+
+    @Override
+    public DataSource getById(String dsId) {
+        return sqlHelperDsManager.getById(dsId);
+    }
+
+    @Override
+    public LogicDsMeta getLogicDsMeta(String switchedDsName) {
+        return sqlHelperDsManager.getLogicDsMeta(switchedDsName);
+    }
+
+    @Override
+    public List<String> all() {
+        return sqlHelperDsManager.all();
+    }
+
+    @Override
+    public List<String> allDatasourceIds() {
+        return sqlHelperDsManager.allDatasourceIds();
     }
 }

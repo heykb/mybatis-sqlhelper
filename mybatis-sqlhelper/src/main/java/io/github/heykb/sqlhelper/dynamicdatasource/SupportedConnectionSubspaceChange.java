@@ -8,6 +8,8 @@ import org.apache.ibatis.logging.LogFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Wrapper;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,6 +41,7 @@ public class SupportedConnectionSubspaceChange {
             return null;
         }
         log.warn(Thread.currentThread().getName() + "线程连接subspace切换到" + subspace);
+        connection = unwrapConnection(connection);
         ConnectionSubspaceTypeEnum re = getSupportedSubspaceType(connection, expectedType);
         switch (re) {
             case SCHEMA:
@@ -62,6 +65,8 @@ public class SupportedConnectionSubspaceChange {
     public static String getCurrentSubspaceIfSupport(Connection connection, ConnectionSubspaceTypeEnum expectedType) throws SQLException {
         String subspace = null;
         ConnectionSubspaceTypeEnum subspaceType = getSupportedSubspaceType(connection, expectedType);
+        connection = unwrapConnection(connection);
+        // 创建语句
         switch (subspaceType) {
             case SCHEMA:
                 return connection.getSchema();
@@ -77,7 +82,7 @@ public class SupportedConnectionSubspaceChange {
         if (subspaceType == null) {
             subspaceType = ConnectionSubspaceTypeEnum.NOT_SUPPORT;
         }
-        if (expectedType != null && expectedType != subspaceType) {
+        if (expectedType!=null && expectedType != subspaceType) {
             throw new SqlHelperException(dbType.name() + "数据库连接支持的subspace类型为" + subspaceType + "。但是LogicDsMeta配置中期望的类型是" + expectedType.name());
         }
         return subspaceType;
@@ -87,5 +92,18 @@ public class SupportedConnectionSubspaceChange {
         return DB_TO_NAMESPACE_TYPE.get(dbType);
     }
 
+
+    private static Connection unwrapConnection(Connection connection) throws SQLException {
+        while (true){
+            if(connection instanceof Wrapper){
+                Connection unwrapConn = connection.unwrap(Connection.class);
+                if(unwrapConn!=null && unwrapConn!=connection){
+                    connection = unwrapConn;
+                    continue;
+                }
+            }
+            return connection;
+        }
+    }
 
 }

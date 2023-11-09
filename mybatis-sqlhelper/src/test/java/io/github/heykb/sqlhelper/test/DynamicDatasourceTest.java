@@ -20,8 +20,8 @@ public class DynamicDatasourceTest {
     @BeforeAll
     static void setUp() throws Exception {
         DataSource dataSource = new UnpooledDataSource("org.hsqldb.jdbcDriver","jdbc:hsqldb:mem:automapping","sa",null);
-        SqlHelperDynamicDataSourceProxy dataSourceProxy = new SqlHelperDynamicDataSourceProxy(dataSource);
-        sqlHelperDsManager = dataSourceProxy.getSqlHelperDsManager();
+        SqlHelperDsManager sqlHelperDsManager = new DefaultSqlHelperDsManager(dataSource);
+        SqlHelperDynamicDataSourceProxy dataSourceProxy = new SqlHelperDynamicDataSourceProxy(sqlHelperDsManager);
         sqlHelperDsManager.put("ds2", LogicDsMeta.builder()
                 .expectedSubspaceType(ConnectionSubspaceTypeEnum.NOT_SUPPORT)
                 .datasourceId("ds2").createFunc(()->{
@@ -29,7 +29,7 @@ public class DynamicDatasourceTest {
                 }).build());
         sqlSessionFactory = BaseUtils.generateSqlSessionFactory(dataSourceProxy, "io/github/heykb/sqlhelper/test/baseTest.sql",
                 BaseTest.TestMapper.class, null,null);
-        BaseUtils.runScript(sqlHelperDsManager.getByDatasourceId("ds2"),"io/github/heykb/sqlhelper/test/baseTest.sql");
+        BaseUtils.runScript(sqlHelperDsManager.getById("ds2"),"io/github/heykb/sqlhelper/test/baseTest.sql");
     }
 
     @Test

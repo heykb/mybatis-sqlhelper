@@ -23,7 +23,6 @@ import com.alibaba.druid.stat.TableStat;
 import com.google.common.collect.Sets;
 import io.github.heykb.sqlhelper.config.SqlHelperException;
 import io.github.heykb.sqlhelper.handler.ColumnFilterInfoHandler;
-import io.github.heykb.sqlhelper.handler.ConditionInjectInfo;
 import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 import io.github.heykb.sqlhelper.handler.abstractor.LogicDeleteInfoHandler;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
@@ -967,16 +966,8 @@ public class SqlStatementEditor {
                 if (!infoHandler.checkTableName(normalizeTableName) || !infoHandler.checkCommandType(commandType)) {
                     continue;
                 }
-                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
-                SQLExpr condition = null;
-
-                if (infoHandler instanceof ConditionInjectInfo) {
-                    condition = ((ConditionInjectInfo) infoHandler).toConditionSQLExpr(tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
-                } else {
-                    String aliasFieldName = CommonUtils.isEmpty(tableAlias) ? tableName + "." + columnName : tableAlias + "." + columnName;
-                    condition = new SQLBinaryOpExpr(new SQLIdentifierExpr(aliasFieldName), infoHandler.toSQLExpr(dbType), CommonUtils.convert(infoHandler.op()));
-
-                }
+//                String columnName = CommonUtils.adaptePropertyName(infoHandler.getColumnName(), this.columnAliasMap, this.isMapUnderscoreToCamelCase);
+                SQLExpr condition = infoHandler.toConditionSQLExpr(tableAlias == null || tableAlias.isEmpty()?tableName:tableAlias, dbType, columnAliasMap, isMapUnderscoreToCamelCase);
                 log.warn(String.format("表%s添加过滤条件：%s", tableName, condition.toString()));
                 cacheNewCondition(target,condition);
             }

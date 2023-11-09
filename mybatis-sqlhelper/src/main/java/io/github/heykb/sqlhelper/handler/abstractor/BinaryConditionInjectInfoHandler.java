@@ -3,7 +3,7 @@ package io.github.heykb.sqlhelper.handler.abstractor;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOpExpr;
-import io.github.heykb.sqlhelper.handler.ConditionInjectInfo;
+import io.github.heykb.sqlhelper.handler.InjectColumnInfoHandler;
 import io.github.heykb.sqlhelper.utils.CommonUtils;
 
 import java.util.Map;
@@ -13,22 +13,26 @@ import java.util.Map;
  *
  * @author heykb
  */
-public abstract class BinaryConditionInjectInfoHandler implements ConditionInjectInfo {
+public abstract class BinaryConditionInjectInfoHandler implements InjectColumnInfoHandler {
 
 
+    @Override
+    public int getInjectTypes() {
+        return CONDITION;
+    }
     /**
      * Gets left condition inject info.
      *
      * @return the left condition inject info
      */
-    abstract public ConditionInjectInfo getLeftConditionInjectInfo();
+    abstract public InjectColumnInfoHandler getLeftConditionInjectInfo();
 
     /**
      * Gets right condition inject info.
      *
      * @return the right condition inject info
      */
-    abstract public ConditionInjectInfo getRightConditionInjectInfo();
+    abstract public InjectColumnInfoHandler getRightConditionInjectInfo();
 
     @Override
     public String op() {
