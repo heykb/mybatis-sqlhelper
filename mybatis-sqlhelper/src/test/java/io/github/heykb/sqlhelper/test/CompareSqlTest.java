@@ -46,8 +46,9 @@ public class CompareSqlTest {
                         .build();
         SqlStatementEditor.Result result = sqlStatementEditor.processing();
         System.out.println(sqlTest.target().trim());
-        StringBuilder sb = new StringBuilder("```sql\n");
-        String title = String.format("-- [%s] [%s] [columnName=%s] [op=\"%s\"] [value=%s]",sqlTest.db(),sqlTest.name(),injectColumnInfoHandler.getColumnName(),injectColumnInfoHandler.op(),injectColumnInfoHandler.getValue());
+        StringBuilder sb = new StringBuilder();
+        sb.append("## ").append(sqlTest.name()).append("\n```sql\n");
+        String title = String.format("-- [%s] [columnName=%s] [op=\"%s\"] [value=%s]",sqlTest.db(),injectColumnInfoHandler.getColumnName(),injectColumnInfoHandler.op(),injectColumnInfoHandler.getValue());
         sb.append(title).append("\n");
         sb.append(SQLUtils.parseSingleStatement(sqlTest.origin(),sqlTest.db()).toString()).append("\n");
         if(result == null){
