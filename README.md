@@ -328,5 +328,5 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 如果你解决了问题，fork项目提交pull request。
 
 ## 联系我
-QQ: 1259609102<br>
+QQ群: 947964874<br>
 email: 1259609102@qq.com,bigsheller08@gmail.com
