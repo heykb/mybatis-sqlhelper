@@ -1,4 +1,4 @@
-# MyBatis 多租户、逻辑删除、数据权限插件-SqlHelper
+# MyBatis 多租户、逻辑删除、数据权限插件、多数据源-SqlHelper(持续维护，放心使用)
 
 [![Maven central](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.heykb/mybatis-sqlHelper)
 
@@ -44,6 +44,7 @@
 * 将多租户、逻辑删除与应用程序解耦，随配随用
 * 强大的字段自动注入能力（<i>查询条件注入/插入语句注入/更新语句注入/查询列过滤</i>），定制其他业务逻辑
 * 支持多种数据库（基于阿里 druid sql解析器）
+* 超简单即可拥有多数据管理和切换
 
 ## spring 集成
 1. [MyBatis SqlHelper Spring](./mybatis-sqlhelper-spring/README.md)
@@ -225,5 +226,5 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 如果你解决了问题，fork项目提交pull request。
 
 ## 联系我
-QQ: 1259609102<br>
+QQ群: 947964874<br>
 email: 1259609102@qq.com,bigsheller08@gmail.com
