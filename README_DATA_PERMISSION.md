@@ -184,7 +184,7 @@ MyBatis SqlHelper提供了[DynamicFindInjectInfoHandler](mybatis-sqlhelper/src/m
 ## 参与贡献
 fork项目提交pull request。如果您不会请学习它，它很有用
 ## 联系我
-QQ: 1259609102<br>
+QQ群: 947964874<br>
 email: 1259609102@qq.com,bigsheller08@gmail.com
 
 
