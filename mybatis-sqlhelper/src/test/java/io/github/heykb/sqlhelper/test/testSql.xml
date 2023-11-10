@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tests>
-    <injectTest type="condition"  name="简单语句条件注入" column="tenant_id" value="1" db="mysql">
+    <injectTest type="condition"  name="简单语句条件注入" column="tenant_id" value="'sqlhelper'" db="mysql">
         <origin>
             select * from people
         </origin>
         <target>
-            select * from people where people.tenant_id=1
+            select * from people where people.tenant_id='sqlhelper'
         </target>
     </injectTest>
+    <injectTest type="insert"  name="简单语句条件注入" column="tenant_id" value="'sqlhelper'" db="mysql">
+        <origin>
+            select * from people
+        </origin>
+        <target>
+            select * from people where people.tenant_id='sqlhelper'
+        </target>
+    </injectTest>
+
     <injectTest type="condition"  name="leftJoinTest条件注入" column="tenant_id" value="1" db="mysql">
         <origin>
             select p.* from people p left join dept d on p.dept_id = d.dept_id
@@ -75,7 +84,7 @@
             AND mv.is_deleted = false
         </target>
     </logicDeleteTest>
-    <logicDeleteTest name="有别名转模糊删除" deleteSqlDemo="update xx set is_deleted=true"
+    <logicDeleteTest name="有别名转逻辑删除" deleteSqlDemo="update xx set is_deleted=true"
                      notDeletedValue="false" column="is_deleted" db="mysql">
         <origin>
             delete
@@ -89,7 +98,7 @@
             AND s.is_deleted = false
         </target>
     </logicDeleteTest>
-    <logicDeleteTest name="无别名转模糊删除" deleteSqlDemo="update xx set is_deleted=true"
+    <logicDeleteTest name="无别名转逻辑删除" deleteSqlDemo="update xx set is_deleted=true"
                      notDeletedValue="false" column="is_deleted" db="mysql">
         <origin>
             delete
@@ -103,6 +112,7 @@
             AND mv.is_deleted = false
         </target>
     </logicDeleteTest>
+
 
     <injectTest type="condition,update" name="update 不明set Item(替换set Item)条件和Update注入" column="tenant_id" value="1" db="postgresql">
         <origin>

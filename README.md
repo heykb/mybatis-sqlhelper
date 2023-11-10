@@ -60,9 +60,7 @@
 ## 注入示例
 [注入示例](./sql-demo.md)
 
-## Mybatis-Sqlhelper使用自动注入
-### 能帮你做什么？
-    1. 多种类型的sql动态注入能力
+## sql自动注入
 ### CONDITION条件注入
 1. 单一条件注入， 创建类实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
 ~~~java
@@ -99,11 +97,64 @@ public class MyConditionInfoHandler implements InjectColumnInfoHandler {
     }
 }
 ~~~
+
+##### 查询语句中： 
+~~~java 
+select * from user s
+~~~
+##### 输出：
+~~~sql
+SELECT * FROM user s WHERE s.tenant_id = 'sqlhelper'
+~~~
+##### 更新语句中： 
+~~~java 
+update user set name = ? where id = ?
+~~~
+##### 输出：
+~~~sql
+update user set name = ? where id = ? and user.tenant_id = 'sqlhelper'
+~~~
+##### 删除语句中： 
+~~~java 
+delete from user where id = ?
+~~~
+##### 输出：
+~~~sql
+delete from user where id = ? and user.tenant_id = 'sqlhelper'
+~~~
+##### 外连接语句中： 
+~~~java 
+SELECT * FROM user u left JOIN card c ON u.id = c.user_id
+~~~
+##### 输出：
+~~~sql
+SELECT *
+FROM user u
+	LEFT JOIN card c
+	ON u.id = c.user_id
+		AND c.tenant_id = sqlhelper
+WHERE u.tenant_id = sqlhelper
+~~~
+##### 各种子查询语句中： 
+~~~java 
+SELECT * FROM (select * from user where id = 2) s
+~~~
+##### 输出：
+~~~sql
+SELECT *
+FROM (
+	(SELECT *
+	FROM user
+	WHERE id = 2
+		AND user.tenant_id = sqlhelper)
+) s
+~~~
+[查看更多测试示例](./sql-demo.md)<br>
 2. 多条件组合注入继承[BinaryConditionInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/BinaryConditionInjectInfoHandler.java)...
 
 
 ### INSERT插入列注入  如自动插入租户id列
-1. 单一条件注入,实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
+实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如:<br>
 ~~~java
 @Component
 public class MyInsertInfoHandler implements InjectColumnInfoHandler {
@@ -130,6 +181,35 @@ public class MyInsertInfoHandler implements InjectColumnInfoHandler {
             return true;
         }
 };
+
+~~~
+#### 输入：
+~~~sql
+INSERT INTO user (id, name)
+VALUES ('0', 'heykb')
+~~~
+#### 输出：
+~~~sql
+INSERT INTO user (id, name, tenant_id)
+VALUES ('0', 'heykb', 'sqlhelper')
+~~~
+#### 输入：
+~~~sql
+INSERT INTO user (id, name)
+SELECT g.id, g.name
+FROM user_group g
+WHERE id = 1
+~~~
+#### 输出：
+~~~sql
+INSERT INTO user (id, name, tenant_id)
+SELECT g.id, g.name
+FROM user_group g
+WHERE id = 1
+~~~
+
+[查看更多测试示例](./sql-demo.md)<br>
+
 ### UPDATE更新项注入...如自动更新updated_time列
 ~~~java
 @Override
@@ -148,7 +228,7 @@ public int getInjectTypes() {
 ## [查看更多测试示例](./sql-demo.md)
 
 
-## Mybatis-Sqlhelper使用字段隔离的多租户（数据源隔离级别参考sqlhelper多数据源配置）
+## 字段隔离的多租户（数据源隔离级别参考sqlhelper多数据源配置）
 ### 能帮你做什么？
     1. 自动为所有where 、join on添加租户过滤条件
     2. 自动为insert语句添加租户列的插入
@@ -184,9 +264,10 @@ public class SimpleTenantInfoHandler extends TenantInfoHandler {
 
 
 
-## Mybatis-Sqlhelper使用物理删除切换逻辑删除
+## 物理删除切换逻辑删除
 ### 能帮你做什么？
-    1. 真实删除自动转逻辑删除
+对于删除sql自动转逻辑删除,查询和更新sql添加逻辑删除条件保证不会查询到已经删除的数据，支持多表删除等复杂情况，详情可以查看 [更多测试示例](./sql-demo.md)<br>
+
 创建类继承[LogicDeleteInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/LogicDeleteInfoHandler.java)
 ~~~java
 @Component
@@ -214,7 +295,7 @@ public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
 }
 ~~~
 ### 3.观察日志。
-物理删除语句已经被自动转换成更新语句，并且保留了所有where条件
+物理删除语句已经被自动转换成更新语句，并且保留了所有where条件。查询和更新也自动添加了过滤条件
 
 
 ## 未完待续。。(如果你有兴趣，右上角watch该项目获得最新的动态)

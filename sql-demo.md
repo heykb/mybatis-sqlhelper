@@ -119,7 +119,7 @@ SET mv.is_deleted = true
 WHERE track.trkid IS NULL
 	AND mv.is_deleted = false
 ```
-## 有别名转模糊删除
+## 有别名转逻辑删除
 ```sql
 -- [mysql] [columnName=is_deleted] [op="="] [value=false]
 DELETE FROM mv s
@@ -132,7 +132,7 @@ SET s.is_deleted = true
 WHERE s.trkid IS NULL
 	AND s.is_deleted = false
 ```
-## 无别名转模糊删除
+## 无别名转逻辑删除
 ```sql
 -- [mysql] [columnName=is_deleted] [op="="] [value=false]
 DELETE FROM mv
