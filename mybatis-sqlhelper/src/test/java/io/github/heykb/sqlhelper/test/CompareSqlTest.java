@@ -58,6 +58,7 @@ public class CompareSqlTest {
             String resultStr = "\n-- ⇊\n\n"+result.getSql();
             sb.append(resultStr).append("\n");
             String exceptResult = SQLUtils.parseSingleStatement(sqlTest.target(),sqlTest.db()).toString();
+            System.out.println(result.getSql());
             Assertions.assertEquals(result.getSql(),exceptResult);
         }
         sb.append("```\n");

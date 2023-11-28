@@ -893,15 +893,20 @@ public class SqlStatementEditor {
             }
         } else if (tableSource instanceof SQLSubqueryTableSource) {
             SQLSelect subSelectObject = ((SQLSubqueryTableSource) tableSource).getSelect();
-            SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
-            addCondition2TableSource(subQueryObject, subQueryObject.getFrom(), commandType);
+            addCondition2Select(subSelectObject,commandType);
+//            SQLSelectQueryBlock subQueryObject = (SQLSelectQueryBlock) subSelectObject.getQuery();
+//            addCondition2TableSource(subQueryObject, subQueryObject.getFrom(), commandType);
         } else if (tableSource instanceof SQLUnionQueryTableSource) {
             // 支持union 查询
             SQLUnionQueryTableSource sqlUnionQueryTableSource = (SQLUnionQueryTableSource) tableSource;
-            SQLSelectQueryBlock left = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getLeft();
-            SQLSelectQueryBlock right = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getRight();
-            addCondition2TableSource(left, left.getFrom(), commandType);
-            addCondition2TableSource(right, right.getFrom(), commandType);
+            SQLSelectQuery left = sqlUnionQueryTableSource.getUnion().getLeft();
+            addCondition2Select(sqlUnionQueryTableSource.getUnion().getLeft(),commandType);
+            addCondition2Select(sqlUnionQueryTableSource.getUnion().getRight(),commandType);
+
+//            SQLSelectQueryBlock left = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getLeft();
+//            SQLSelectQueryBlock right = (SQLSelectQueryBlock) sqlUnionQueryTableSource.getUnion().getRight();
+//            addCondition2TableSource(left, left.getFrom(), commandType);
+//            addCondition2TableSource(right, right.getFrom(), commandType);
         } else {
             throw new SqlHelperException("不支持的sql,请排除，或者联系作者添加支持。" + tableSource.toString());
         }
