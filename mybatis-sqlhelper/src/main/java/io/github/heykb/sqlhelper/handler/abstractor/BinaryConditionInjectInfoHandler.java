@@ -58,4 +58,16 @@ public abstract class BinaryConditionInjectInfoHandler implements InjectColumnIn
         }
         return null;
     }
+
+
+
+    @Override
+    public String getColumnName() {
+        return null;
+    }
+
+    @Override
+    public String getValue() {
+        return null;
+    }
 }

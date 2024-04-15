@@ -62,7 +62,7 @@
 
 ## sql自动注入
 ### CONDITION条件注入
-1. 单一条件注入， 创建类实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
+1. 单一条件注入， 创建类实现[InjectColumnInfoHandler](mybatis-sqlhelper/src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如：
 ~~~java
 @Component
 public class MyConditionInfoHandler implements InjectColumnInfoHandler {
@@ -150,11 +150,82 @@ FROM (
 ) s
 ~~~
 [查看更多测试示例](./sql-demo.md)<br>
-2. 多条件组合注入继承[BinaryConditionInjectInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/BinaryConditionInjectInfoHandler.java)...
+2. 多条件组合注入继承[BinaryConditionInjectInfoHandler](mybatis-sqlhelper/src/main/java/io/github/heykb/sqlhelper/handler/abstractor/BinaryConditionInjectInfoHandler.java)
+```java
+/**
+ * @author heykb
+ * 注入： a = 1 and (b > 1 or c = 'x')
+ */
+@Component
+public class MyBinaryConditionInjectInfoHandler extends BinaryConditionInjectInfoHandler {
+
+    @Override
+    public String op() {
+        return "and";
+    }
+
+    @Override
+    public InjectColumnInfoHandler getLeftConditionInjectInfo() {
+        return new SimpleCondition("a","=","1");
+    }
+
+    @Override
+    public InjectColumnInfoHandler getRightConditionInjectInfo() {
+        return new BinaryConditionInjectInfoHandler() {
+            @Override
+            public InjectColumnInfoHandler getLeftConditionInjectInfo() {
+                return new SimpleCondition("b",">","1");
+            }
+
+            @Override
+            public String op() {
+                return "or";
+            }
+
+            @Override
+            public InjectColumnInfoHandler getRightConditionInjectInfo() {
+                return new SimpleCondition("c","=","'x'");
+            }
+        };
+    }
+    
+    static class SimpleCondition implements InjectColumnInfoHandler{
+        String columnName;
+        String op;
+        String value;
+
+        public SimpleCondition(String columnName, String op, String value) {
+            this.columnName = columnName;
+            this.op = op;
+            this.value = value;
+        }
+
+        @Override
+        public String getColumnName() {
+            return columnName;
+        }
+
+        @Override
+        public String op() {
+            return op;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public int getInjectTypes() {
+            return 0;
+        }
+    }
+}
+```
 
 
 ### INSERT插入列注入  如自动插入租户id列
-实现[InjectColumnInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如:<br>
+实现[InjectColumnInfoHandler](mybatis-sqlhelper/src/main/java/io/github/heykb/sqlhelper/handler/InjectColumnInfoHandler.java)，如:<br>
 ~~~java
 @Component
 public class MyInsertInfoHandler implements InjectColumnInfoHandler {
@@ -235,7 +306,7 @@ public int getInjectTypes() {
     3. 多租户的实现也是利用sqlhelper的自动注入功能，相当于配置了CONDITIO与INSERT的两种注入
 ### 创建注入类 
 ~~~
-创建类继承[TenantInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/TenantInfoHandler.java)，如：
+创建类继承[TenantInfoHandler](mybatis-sqlhelper/src/main/java/io/github/heykb/sqlhelper/handler/abstractor/TenantInfoHandler.java)，如：
 ~~~java
 @Component
 public class SimpleTenantInfoHandler extends TenantInfoHandler {
@@ -268,7 +339,7 @@ public class SimpleTenantInfoHandler extends TenantInfoHandler {
 ### 能帮你做什么？
 对于删除sql自动转逻辑删除,查询和更新sql添加逻辑删除条件保证不会查询到已经删除的数据，支持多表删除等复杂情况，详情可以查看 [更多测试示例](./sql-demo.md)<br>
 
-创建类继承[LogicDeleteInfoHandler](src/main/java/io/github/heykb/sqlhelper/handler/abstractor/LogicDeleteInfoHandler.java)
+创建类继承[LogicDeleteInfoHandler](mybatis-sqlhelper/src/main/java/io/github/heykb/sqlhelper/handler/abstractor/LogicDeleteInfoHandler.java)
 ~~~java
 @Component
 public class SimpleLogicDeleteInfoHandler extends LogicDeleteInfoHandler {
