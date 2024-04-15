@@ -1,16 +1,16 @@
-## �?单语句条件注�?
+## 简单语句条件注入
 ```sql
 -- [mysql] [columnName=tenant_id] [op="="] [value='sqlhelper']
 SELECT *
 FROM people
 
--- ?
+-- ⇊
 
 SELECT *
 FROM people
 WHERE people.tenant_id = 'sqlhelper'
 ```
-## �?单union条件注入
+## 简单union条件注入
 ```sql
 -- [mysql] [columnName=tenant_id] [op="="] [value='sqlhelper']
 SELECT *
@@ -19,7 +19,7 @@ UNION
 SELECT *
 FROM test
 
--- ?
+-- ⇊
 
 SELECT *
 FROM people
@@ -36,7 +36,7 @@ SELECT p.*
 FROM people p
 	LEFT JOIN dept d ON p.dept_id = d.dept_id
 
--- ?
+-- ⇊
 
 SELECT p.*
 FROM people p
@@ -52,7 +52,7 @@ SELECT p.*
 FROM people p
 	RIGHT JOIN dept d ON p.dept_id = d.dept_id
 
--- ?
+-- ⇊
 
 SELECT p.*
 FROM people p
@@ -68,7 +68,7 @@ SELECT p.*
 FROM people p
 	JOIN dept d ON p.dept_id = d.dept_id
 
--- ?
+-- ⇊
 
 SELECT p.*
 FROM people p
@@ -83,7 +83,7 @@ SELECT p.*
 FROM people p
 	FULL JOIN dept d ON p.dept_id = d.dept_id
 
--- ?
+-- ⇊
 
 SELECT p.*
 FROM people p
@@ -98,19 +98,19 @@ FROM people p
 SELECT *
 FROM people
 
--- ?
+-- ⇊
 
 SELECT *
 FROM people
 WHERE people.dept_id IN (1, 2, 3)
 ```
-## in 子查询条件注�?
+## in 子查询条件注入
 ```sql
 -- [mysql] [columnName=dept_id] [op="in"] [value=(select dept_id from dept where user_id=1)]
 SELECT *
 FROM people
 
--- ?
+-- ⇊
 
 SELECT *
 FROM people
@@ -120,7 +120,7 @@ WHERE people.dept_id IN (
 	WHERE user_id = 1
 )
 ```
-## 多表删除转�?�辑删除
+## 多表删除转逻辑删除
 ```sql
 -- [mysql] [columnName=is_deleted] [op="="] [value=false]
 DELETE mv
@@ -128,7 +128,7 @@ FROM mv
 	LEFT JOIN track ON mv.mvid = track.trkid
 WHERE track.trkid IS NULL
 
--- ?
+-- ⇊
 
 UPDATE mv
 	LEFT JOIN track
@@ -144,7 +144,7 @@ WHERE track.trkid IS NULL
 DELETE FROM mv s
 WHERE s.trkid IS NULL
 
--- ?
+-- ⇊
 
 UPDATE mv s
 SET s.is_deleted = true
@@ -157,7 +157,7 @@ WHERE s.trkid IS NULL
 DELETE FROM mv
 WHERE trkid IS NULL
 
--- ?
+-- ⇊
 
 UPDATE mv
 SET is_deleted = true
@@ -176,7 +176,7 @@ FROM (
 ) m
 WHERE t.idFieldName = m.idFieldName
 
--- ?
+-- ⇊
 
 UPDATE tb t
 SET tenant_id = 1
@@ -201,7 +201,7 @@ FROM (
 ) m
 WHERE t.id = m.id
 
--- ?
+-- ⇊
 
 UPDATE tb t
 SET sort_sn = m._seqnum, tenant_id = 1
@@ -227,7 +227,7 @@ USING mv
 	LEFT JOIN track ON mv.mvid = track.trkid
 WHERE track.trkid IS NULL
 
--- ?
+-- ⇊
 
 DELETE FROM mv
 USING mv
@@ -244,7 +244,7 @@ DELETE mv FROM mv
 	LEFT JOIN track ON mv.mvid = track.trkid
 WHERE track.trkid IS NULL
 
--- ?
+-- ⇊
 
 DELETE mv FROM mv
 	LEFT JOIN track
@@ -260,7 +260,7 @@ DELETE FROM mv
 USING mv, track
 WHERE track.trkid = mv.mvid
 
--- ?
+-- ⇊
 
 DELETE FROM mv
 USING mv, track
@@ -274,7 +274,7 @@ WHERE track.trkid = mv.mvid
 DELETE mv FROM mv, track
 WHERE track.trkid = mv.mvid
 
--- ?
+-- ⇊
 
 DELETE mv FROM mv, track
 WHERE track.trkid = mv.mvid
@@ -289,7 +289,7 @@ SET s.class_name = 'test00', c.stu_name = 'test00'
 FROM student s, class c
 WHERE s.class_id = c.id
 
--- ?
+-- ⇊
 
 UPDATE s, c
 SET s.class_name = 'test00', c.stu_name = 'test00', s.tenant_id = 1, c.tenant_id = 1
@@ -306,7 +306,7 @@ SET s.class_name = 'test00', c.stu_name = 'test00'
 FROM student s, class c
 WHERE s.class_id = c.id
 
--- ?
+-- ⇊
 
 UPDATE s, c
 SET s.class_name = 'test00', c.stu_name = 'test00'
@@ -322,7 +322,7 @@ UPDATE student s, class c
 SET s.class_name = 'test00', c.stu_name = 'test00'
 WHERE s.class_id = c.id
 
--- ?
+-- ⇊
 
 UPDATE student s, class c
 SET s.class_name = 'test00', c.stu_name = 'test00'
@@ -337,7 +337,7 @@ UPDATE student s
 JOIN class c ON s.class_id = c.id 
 SET s.class_name = 'test11'
 
--- ?
+-- ⇊
 
 UPDATE student s
 JOIN class c ON s.class_id = c.id 
@@ -352,7 +352,7 @@ UPDATE student s
 LEFT JOIN class c ON s.class_id = c.id 
 SET s.class_name = 'test22', c.stu_name = 'test22'
 
--- ?
+-- ⇊
 
 UPDATE student s
 LEFT JOIN class c ON s.class_id = c.id
@@ -367,7 +367,7 @@ UPDATE student
 LEFT JOIN class ON student.class_id = class.id 
 SET student.class_name = 'test22', class.stu_name = 'test22'
 
--- ?
+-- ⇊
 
 UPDATE student
 LEFT JOIN class ON student.class_id = class.id
@@ -394,7 +394,7 @@ INSERT FIRST
 SELECT object_id
 FROM t;
 
--- ?
+-- ⇊
 
 INSERT FIRST 
 	WHEN object_id > 5 THEN
@@ -432,7 +432,7 @@ INSERT ALL
 SELECT object_id
 FROM t;
 
--- ?
+-- ⇊
 
 INSERT ALL 
 	WHEN object_id > 5 THEN
@@ -467,7 +467,7 @@ INSERT ALL
 SELECT *
 FROM dual;
 
--- ?
+-- ⇊
 
 INSERT ALL 
 	INTO suppliers
@@ -483,7 +483,7 @@ SELECT *
 FROM dual
 WHERE dual.tenant_id = 1;
 ```
-## qq用户�?732811911）提交条件注�?
+## qq用户（732811911）提交条件注入
 ```sql
 -- [mysql] [columnName=tenant_id] [op="="] [value=1]
 UPDATE chart_view cv, chart_view_cache cve
@@ -491,7 +491,7 @@ SET cv.` NAME ` = cve.` NAME `, cv.title = cve.title, cv.scene_id = cve.scene_id
 WHERE cve.ID = cv.ID
 	AND cv.ID IN (?, ?)
 
--- ?
+-- ⇊
 
 UPDATE chart_view cv, chart_view_cache cve
 SET cv.` NAME ` = cve.` NAME `, cv.title = cve.title, cv.scene_id = cve.scene_id
@@ -510,7 +510,7 @@ SET PersonCityName = (
 	WHERE AddressList.PersonId = Persons.PersonId
 )
 
--- ?
+-- ⇊
 
 UPDATE Persons
 SET PersonCityName = (
@@ -528,7 +528,7 @@ INSERT INTO Customers (CustomerName, City, Country)
 SELECT SupplierName, City, Country
 FROM Suppliers s
 
--- ?
+-- ⇊
 
 INSERT INTO Customers (CustomerName, City, Country)
 SELECT SupplierName, City, Country
@@ -542,7 +542,7 @@ INSERT INTO Customers (CustomerName, City, Country)
 SELECT SupplierName, City, Country
 FROM Suppliers
 
--- ?
+-- ⇊
 
 INSERT INTO Customers (CustomerName, City, Country)
 SELECT SupplierName, City, Country
@@ -563,15 +563,15 @@ FROM (
 		FROM (
 			SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, w.alarm_id AS alarmId, w.urgency_degree AS urgencyDegree
 				, CASE w.urgency_degree
-					WHEN '1' THEN '紧�??'
-					WHEN '2' THEN '�?�?'
+					WHEN '1' THEN '紧急'
+					WHEN '2' THEN '一般'
 					ELSE ''
 				END AS urgencyDegreeStr
 				, CASE w.work_order_status
-					WHEN 1 THEN '待处�?'
-					WHEN 2 THEN '已取�?'
-					WHEN 3 THEN '已完�?'
-					WHEN 4 THEN '已�??�?'
+					WHEN 1 THEN '待处理'
+					WHEN 2 THEN '已取消'
+					WHEN 3 THEN '已完成'
+					WHEN 4 THEN '已退回'
 					ELSE ''
 				END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 				, w.report_time AS reportTime, w.report_by AS reportBy
@@ -601,15 +601,15 @@ FROM (
 	SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, ai.alarm_type_id AS alarmTypeId, ai.alarm_code AS alarmCode
 		, w.urgency_degree AS urgencyDegree
 		, CASE w.urgency_degree
-			WHEN '1' THEN '紧�??'
-			WHEN '2' THEN '�?�?'
+			WHEN '1' THEN '紧急'
+			WHEN '2' THEN '一般'
 			ELSE ''
 		END AS urgencyDegreeStr
 		, CASE w.work_order_status
-			WHEN 1 THEN '待处�?'
-			WHEN 2 THEN '已取�?'
-			WHEN 3 THEN '已完�?'
-			WHEN 4 THEN '已�??�?'
+			WHEN 1 THEN '待处理'
+			WHEN 2 THEN '已取消'
+			WHEN 3 THEN '已完成'
+			WHEN 4 THEN '已退回'
 			ELSE ''
 		END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 		, w.report_time AS reportTime, w.report_by AS reportBy
@@ -643,15 +643,15 @@ FROM (
 	SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, ai.alarm_type_id AS alarmTypeId, ai.alarm_code AS alarmCode
 		, w.urgency_degree AS urgencyDegree
 		, CASE w.urgency_degree
-			WHEN '1' THEN '紧�??'
-			WHEN '2' THEN '�?�?'
+			WHEN '1' THEN '紧急'
+			WHEN '2' THEN '一般'
 			ELSE ''
 		END AS urgencyDegreeStr
 		, CASE w.work_order_status
-			WHEN 1 THEN '待处�?'
-			WHEN 2 THEN '已取�?'
-			WHEN 3 THEN '已完�?'
-			WHEN 4 THEN '已�??�?'
+			WHEN 1 THEN '待处理'
+			WHEN 2 THEN '已取消'
+			WHEN 3 THEN '已完成'
+			WHEN 4 THEN '已退回'
 			ELSE ''
 		END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 		, w.report_time AS reportTime, w.report_by AS reportBy
@@ -697,7 +697,7 @@ FROM (
 ) te
 ORDER BY te.reportTime DESC
 
--- ?
+-- ⇊
 
 SELECT *
 FROM (
@@ -710,15 +710,15 @@ FROM (
 		FROM (
 			SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, w.alarm_id AS alarmId, w.urgency_degree AS urgencyDegree
 				, CASE w.urgency_degree
-					WHEN '1' THEN '紧�??'
-					WHEN '2' THEN '�?�?'
+					WHEN '1' THEN '紧急'
+					WHEN '2' THEN '一般'
 					ELSE ''
 				END AS urgencyDegreeStr
 				, CASE w.work_order_status
-					WHEN 1 THEN '待处�?'
-					WHEN 2 THEN '已取�?'
-					WHEN 3 THEN '已完�?'
-					WHEN 4 THEN '已�??�?'
+					WHEN 1 THEN '待处理'
+					WHEN 2 THEN '已取消'
+					WHEN 3 THEN '已完成'
+					WHEN 4 THEN '已退回'
 					ELSE ''
 				END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 				, w.report_time AS reportTime, w.report_by AS reportBy
@@ -752,15 +752,15 @@ FROM (
 	SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, ai.alarm_type_id AS alarmTypeId, ai.alarm_code AS alarmCode
 		, w.urgency_degree AS urgencyDegree
 		, CASE w.urgency_degree
-			WHEN '1' THEN '紧�??'
-			WHEN '2' THEN '�?�?'
+			WHEN '1' THEN '紧急'
+			WHEN '2' THEN '一般'
 			ELSE ''
 		END AS urgencyDegreeStr
 		, CASE w.work_order_status
-			WHEN 1 THEN '待处�?'
-			WHEN 2 THEN '已取�?'
-			WHEN 3 THEN '已完�?'
-			WHEN 4 THEN '已�??�?'
+			WHEN 1 THEN '待处理'
+			WHEN 2 THEN '已取消'
+			WHEN 3 THEN '已完成'
+			WHEN 4 THEN '已退回'
 			ELSE ''
 		END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 		, w.report_time AS reportTime, w.report_by AS reportBy
@@ -800,15 +800,15 @@ FROM (
 	SELECT w.work_order_id AS workOrderId, w.work_order_code AS workOrderCode, w.work_order_type AS workOrderType, ai.alarm_type_id AS alarmTypeId, ai.alarm_code AS alarmCode
 		, w.urgency_degree AS urgencyDegree
 		, CASE w.urgency_degree
-			WHEN '1' THEN '紧�??'
-			WHEN '2' THEN '�?�?'
+			WHEN '1' THEN '紧急'
+			WHEN '2' THEN '一般'
 			ELSE ''
 		END AS urgencyDegreeStr
 		, CASE w.work_order_status
-			WHEN 1 THEN '待处�?'
-			WHEN 2 THEN '已取�?'
-			WHEN 3 THEN '已完�?'
-			WHEN 4 THEN '已�??�?'
+			WHEN 1 THEN '待处理'
+			WHEN 2 THEN '已取消'
+			WHEN 3 THEN '已完成'
+			WHEN 4 THEN '已退回'
 			ELSE ''
 		END AS workOrderStatusStr, w.work_order_status AS workOrderStatus, w.worksheet_source AS worksheetSource, w.report_description AS reportDescription, w.work_order_address AS workOrderAddress
 		, w.report_time AS reportTime, w.report_by AS reportBy
